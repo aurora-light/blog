@@ -2,7 +2,7 @@ import type { SiteConfig } from '@/types/siteConfig';
 
 const url = new URL(
 	process.env.NODE_ENV === 'production'
-		? 'https://dino.cn/'
+		? process.env.NEXT_PUBLIC_SITE_URL || 'https://dino.cn/'
 		: 'http://localhost:3000'
 );
 export const baseSiteConfig: SiteConfig = {
