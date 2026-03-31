@@ -7,14 +7,27 @@ import { env } from '~/env.mjs';
  * @returns 完整的站点URL。
  */
 export function constructSiteUrl(path = '') {
-	const baseUrl =
-		process.env.NODE_ENV === 'production'
-			? env.NEXT_PUBLIC_SITE_URL ||
-				process.env.VERCEL_URL ||
-				'http://localhost:3000'
-			: 'http://localhost:3000';
+	// 确保 baseUrl 是有效的 URL
+	let baseUrl = 'http://localhost:3000';
 
-	return new URL(path, baseUrl);
+	if (process.env.NODE_ENV === 'production') {
+		if (env.NEXT_PUBLIC_SITE_URL) {
+			baseUrl = env.NEXT_PUBLIC_SITE_URL;
+		} else if (process.env.VERCEL_URL) {
+			// VERCEL_URL 可能不包含协议，需要添加
+			baseUrl = process.env.VERCEL_URL.startsWith('http')
+				? process.env.VERCEL_URL
+				: `https://${process.env.VERCEL_URL}`;
+		}
+	}
+
+	try {
+		return new URL(path, baseUrl);
+	} catch (error) {
+		console.error('Invalid URL construction:', error);
+		//  fallback 到基本 URL
+		return new URL(path, 'http://localhost:3000');
+	}
 }
 
 /**
