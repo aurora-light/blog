@@ -19,6 +19,11 @@ export const metadata: Metadata = {
 	description: siteMetadata.description,
 	keywords: '%s,' + siteMetadata.keywords.join(','),
 	manifest: '/site.webmanifest',
+	icons: {
+		icon: siteMetadata.icons.icon,
+		shortcut: siteMetadata.icons.shortcut,
+		apple: siteMetadata.icons.apple
+	},
 	openGraph: siteMetadata.openGraph,
 	twitter: siteMetadata.twitter,
 	alternates: {
