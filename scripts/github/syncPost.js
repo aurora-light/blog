@@ -1,92 +1,158 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
 /* eslint-disable */
+require('dotenv').config();
+
 const GitHub = require('github-api');
 const fs = require('fs-extra');
 const path = require('path');
-// console.log(process.env, ' process.env');
-const { GH_TOKEN, GH_USER, GH_PROJECT_NAME } = process.env;
+
+const {
+	GH_TOKEN,
+	GH_USER = 'aurora-light',
+	GH_PROJECT_NAME = 'blog'
+} = process.env;
+
+// 🚨 强制校验 token
+if (!GH_TOKEN) {
+	console.error('❌ 请设置 GH_TOKEN');
+	process.exit(1);
+}
+
+// 🚨 校验用户名和仓库名（防止 URL 非法）
+if (
+	!/^[a-zA-Z0-9_-]+$/.test(GH_USER) ||
+	!/^[a-zA-Z0-9_-]+$/.test(GH_PROJECT_NAME)
+) {
+	console.error('❌ GH_USER 或 GH_PROJECT_NAME 包含非法字符');
+	process.exit(1);
+}
 
 const gh = new GitHub({
 	token: GH_TOKEN
 });
 
-const blogOutputPath = '../../data/blog';
+console.log('🚀 sync-post start');
+console.log('GH_USER:', GH_USER);
+console.log('GH_PROJECT_NAME:', GH_PROJECT_NAME);
 
-if (!GH_USER || !GH_PROJECT_NAME) {
-	console.error('请设置GITHUB_USER和GITHUB_PROJECT_NAME');
-	process.exit(-1);
-} // 1. 验证环境变量
-if (!GH_USER || !GH_PROJECT_NAME) {
-	console.error('请设置GITHUB_USER和GITHUB_PROJECT_NAME');
-	process.exit(-1);
+// ================= 工具函数 =================
+
+// ✅ YAML 安全
+function safeYaml(str) {
+	return JSON.stringify(str || '');
 }
 
-// 2. 验证环境变量格式
-if (
-	!/^[a-zA-Z0-9_-]+$/.test(GH_USER) ||
-	!/^[a-zA-Z0-9_-]+$/.test(GH_PROJECT_NAME)
-) {
-	console.error('环境变量包含无效字符，请只使用字母、数字、连字符和下划线');
-	process.exit(-1);
+// ✅ URL 安全（避免 ERR_UNESCAPED_CHARACTERS）
+function safeUrl(url = '') {
+	try {
+		return encodeURI(url);
+	} catch (e) {
+		console.warn('⚠️ URL encode 失败:', url);
+		return url;
+	}
 }
 
-// 如果是 img 标签，并且没有闭合，那么就拼接闭合字符
-function closeImgTag(htmlString) {
-	// 使用正则表达式匹配未闭合的 <img> 标签
-	const imgTagRegex = /<img([^>]*)(?<!\/)>/g;
-	// 将未闭合的 <img> 标签替换为自闭合的 <img /> 标签
-	return htmlString.replace(imgTagRegex, '<img$1 />');
+// ✅ body 安全（避免奇怪字符）
+function sanitizeBody(body = '') {
+	return body
+		.replace(/\u0000/g, '') // 移除非法字符
+		.replace(/\r/g, '')
+		.replace(/<br ?\/?>/g, '\n');
 }
-console.log(GH_USER, GH_PROJECT_NAME, 'GH_USER, GH_PROJECT_NAME');
 
-// get blog list
+// ✅ 修复 img 标签
+function closeImgTag(htmlString = '') {
+	return htmlString.replace(/<img([^>]*)(?<!\/)>/g, '<img$1 />');
+}
+
+// ================= 核心逻辑 =================
+
 const issueInstance = gh.getIssues(GH_USER, GH_PROJECT_NAME);
+
 function generateMdx(issue, fileName) {
-	console.log(issue, 'issue');
-	const { title, labels, created_at, body, html_url, user } = issue;
-	return `---
-title: ${title.trim()}
+	try {
+		const {
+			title = '',
+			labels = [],
+			created_at,
+			body = '',
+			html_url = '',
+			user
+		} = issue;
+
+		return `---
+title: ${safeYaml(title.trim())}
 date: ${created_at}
 slug: ${fileName}
-author: ${user?.login}：${user?.html_url}
+author: ${safeYaml(`${user?.login}：${user?.html_url}`)}
 tags: ${JSON.stringify(labels.map((item) => item.name))}
 ---
 
-${closeImgTag(body.replace(/<br \/>/g, '\n'))}
+${closeImgTag(sanitizeBody(body))}
 
 ---
-此文自动发布于：<a href="${html_url}" target="_blank">github issues</a>
+此文自动发布于：<a href="${safeUrl(html_url)}" target="_blank">github issues</a>
 `;
+	} catch (err) {
+		console.error('❌ generateMdx 失败:', err.message);
+		throw err;
+	}
 }
+
+const blogOutputPath = '../../data/blog';
 
 function main() {
 	const filePath = path.resolve(__dirname, blogOutputPath);
-	// 只查询自己的issues，避免别人创建的也更新到博客
-	const creators = ['aurora-light']; // 添加多个creator
+
 	fs.ensureDirSync(filePath);
 	fs.emptyDirSync(filePath);
+
+	const creators = ['aurora-light'];
+
 	creators.forEach((name) => {
-		issueInstance.listIssues({ creator: name }).then(({ data }) => {
-			let successCount = 0;
-			for (const item of data) {
-				try {
-					const fileName = `post-${item.number}`;
-					const content = generateMdx(item, fileName);
-					fs.writeFileSync(`${filePath}/${fileName}.mdx`, content);
-					console.log(`${filePath}/${fileName}.mdx`, 'success');
-					successCount++;
-				} catch (error) {
-					console.log(error);
+		console.log(`📡 正在拉取 issues: ${name}`);
+
+		issueInstance
+			.listIssues({ creator: name })
+			.then(({ data }) => {
+				console.log(`📄 获取到 ${data.length} 条 issues`);
+
+				let successCount = 0;
+
+				for (const item of data) {
+					try {
+						// 🔍 打印关键字段（定位问题用）
+						console.log(
+							`➡️ issue #${item.number} title:`,
+							item.title?.slice(0, 50)
+						);
+
+						const fileName = `post-${item.number}`;
+						const content = generateMdx(item, fileName);
+
+						const fullPath = `${filePath}/${fileName}.mdx`;
+
+						fs.writeFileSync(fullPath, content);
+
+						console.log(`✅ ${fullPath}`);
+						successCount++;
+					} catch (error) {
+						console.error(`❌ 处理 issue #${item.number} 失败`);
+						console.error(error.message);
+					}
 				}
-			}
-			if (successCount === data.length) {
-				console.log('文章全部同步成功！', data.length);
-			} else {
-				console.log('文章同步失败！失败数量=', data.length - successCount);
-			}
-		});
+
+				if (successCount === data.length) {
+					console.log('🎉 文章全部同步成功！', data.length);
+				} else {
+					console.log('⚠️ 部分失败，失败数量=', data.length - successCount);
+				}
+			})
+			.catch((err) => {
+				console.error('🚨 拉取 issues 失败');
+				console.error(err.message);
+				process.exit(1);
+			});
 	});
 }
 
-module.exports = main;
+main();
