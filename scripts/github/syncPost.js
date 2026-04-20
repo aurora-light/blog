@@ -16,6 +16,19 @@ const blogOutputPath = '../../data/blog';
 if (!GH_USER || !GH_PROJECT_NAME) {
 	console.error('请设置GITHUB_USER和GITHUB_PROJECT_NAME');
 	process.exit(-1);
+} // 1. 验证环境变量
+if (!GH_USER || !GH_PROJECT_NAME) {
+	console.error('请设置GITHUB_USER和GITHUB_PROJECT_NAME');
+	process.exit(-1);
+}
+
+// 2. 验证环境变量格式
+if (
+	!/^[a-zA-Z0-9_-]+$/.test(GH_USER) ||
+	!/^[a-zA-Z0-9_-]+$/.test(GH_PROJECT_NAME)
+) {
+	console.error('环境变量包含无效字符，请只使用字母、数字、连字符和下划线');
+	process.exit(-1);
 }
 
 // 如果是 img 标签，并且没有闭合，那么就拼接闭合字符
@@ -25,6 +38,7 @@ function closeImgTag(htmlString) {
 	// 将未闭合的 <img> 标签替换为自闭合的 <img /> 标签
 	return htmlString.replace(imgTagRegex, '<img$1 />');
 }
+console.log(GH_USER, GH_PROJECT_NAME, 'GH_USER, GH_PROJECT_NAME');
 
 // get blog list
 const issueInstance = gh.getIssues(GH_USER, GH_PROJECT_NAME);
