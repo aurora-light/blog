@@ -22,6 +22,7 @@ if (
 	!/^[a-zA-Z0-9_-]+$/.test(GH_USER) ||
 	!/^[a-zA-Z0-9_-]+$/.test(GH_PROJECT_NAME)
 ) {
+	console.log(GH_USER, GH_PROJECT_NAME, 'GH_USER, GH_PROJECT_NAME');
 	console.error('❌ GH_USER 或 GH_PROJECT_NAME 包含非法字符');
 	process.exit(1);
 }
