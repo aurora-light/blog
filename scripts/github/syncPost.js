@@ -16,13 +16,16 @@ if (!GH_TOKEN) {
 	console.error('❌ 请设置 GH_TOKEN');
 	process.exit(1);
 }
+function clean(str = '') {
+	return str.replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+const safeUser = clean(GH_USER);
+const safeRepo = clean(GH_PROJECT_NAME);
 
 // 🚨 校验用户名和仓库名（防止 URL 非法）
-if (
-	!/^[a-zA-Z0-9_-]+$/.test(GH_USER) ||
-	!/^[a-zA-Z0-9_-]+$/.test(GH_PROJECT_NAME)
-) {
-	console.log(GH_USER, GH_PROJECT_NAME, 'GH_USER, GH_PROJECT_NAME');
+if (!/^[a-zA-Z0-9_-]+$/.test(safeUser) || !/^[a-zA-Z0-9_-]+$/.test(safeRepo)) {
+	console.log(safeUser, safeRepo, 'GH_USER, GH_PROJECT_NAME');
 	console.error('❌ GH_USER 或 GH_PROJECT_NAME 包含非法字符');
 	process.exit(1);
 }
@@ -32,8 +35,8 @@ const gh = new GitHub({
 });
 
 console.log('🚀 sync-post start');
-console.log('GH_USER:', GH_USER);
-console.log('GH_PROJECT_NAME:', GH_PROJECT_NAME);
+console.log('GH_USER:', safeUser);
+console.log('GH_PROJECT_NAME:', safeRepo);
 
 // ================= 工具函数 =================
 
@@ -67,7 +70,7 @@ function closeImgTag(htmlString = '') {
 
 // ================= 核心逻辑 =================
 
-const issueInstance = gh.getIssues(GH_USER, GH_PROJECT_NAME);
+const issueInstance = gh.getIssues(safeUser, safeRepo);
 
 function generateMdx(issue, fileName) {
 	try {
