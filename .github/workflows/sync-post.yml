@@ -1,28 +1,80 @@
+name: Sync Post
+
+on:
+  issues:
+    types:
+      - opened
+      - closed
+      - edited
+      - renamed
+      - labeled
+      - unlabeled
+      - reopened
+  workflow_dispatch:
+
+# 防止并发冲突
+concurrency:
+  group: sync-post-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+# 👇 关键：给 Actions 写权限（否则 403）
 permissions:
   contents: write
 
-steps:
-  - uses: actions/checkout@v4
-    with:
-      token: ${{ secrets.GH_TOKEN }}
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_USER: ${{ secrets.GH_USER }}
+  GH_PROJECT_NAME: ${{ secrets.GH_PROJECT_NAME }}
 
-  - name: Git config
-    run: |
-      git config user.name "aurora-light"
-      git config user.email "1983292042@qq.com"
+jobs:
+  Publish:
+    runs-on: ubuntu-latest
 
-  - name: Update blog files
-    run: |
-      pnpm run sync-post
-      git add .
-      git commit -m 'chore(ci): blog sync' || echo "no changes"
+    steps:
+      # 📦 checkout（用 PAT，避免权限问题）
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
-  - name: Rebase
-    run: git pull --rebase origin main || true
+      # 🟢 Node 环境
+      - name: Setup Node.js 🚀
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.11.0'
 
-  - name: Use PAT
-    run: |
-      git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+      # 📦 pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.6.0
 
-  - name: Push
-    run: git push origin HEAD:main
+      # 🔧 Git 配置
+      - name: Git config 🔧
+        run: |
+          git config user.name "aurora-light"
+          git config user.email "1983292042@qq.com"
+
+      # 📦 安装依赖
+      - name: Install 🔧
+        run: pnpm install
+
+      # 🛠️ 执行同步脚本并提交
+      - name: Update blog files ⛏️
+        run: |
+          pnpm run sync-post
+          git add .
+          git commit -m "chore(ci): blog sync" || echo "no changes"
+
+      # 🔄 拉取远程避免冲突
+      - name: Pull latest changes
+        run: git pull --rebase origin main || true
+
+      # 🔑 强制使用 PAT（关键）
+      - name: Use PAT for push
+        run: |
+          git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+
+      # 🚀 推送
+      - name: Push changes
+        run: git push origin HEAD:main
