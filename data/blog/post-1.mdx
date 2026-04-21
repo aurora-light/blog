@@ -1,0 +1,58 @@
+---
+title: "获取react组件的ref"
+date: 2026-04-17T08:48:18Z
+slug: post-1
+author: "aurora-light：https://github.com/aurora-light"
+tags: []
+---
+
+### antd源码库中的获取组件ref方法的解析
+```
+`export const getNodeRef: <T = any>(
+  node: React.ReactNode,
+) => React.Ref<T> | null = node => {
+  if (node && isReactElement(node)) {
+    const ele = node as any;
+    // Source from:
+    // https://github.com/mui/material-ui/blob/master/packages/mui-utils/src/getReactNodeRef/getReactNodeRef.ts
+    return ele.props.propertyIsEnumerable('ref') ? ele.props.ref : ele.ref;
+  }
+  return null;
+};`
+```
+其中最主要的方法是通过propertyisenumerable去判断，这段代码是从MUI源码库中获取的。
+由于react19之后ref已经可以作为普通的属性直接传入了，所以获取方式会有不同。
+
+
+### isReactElement方法
+```
+function isReactElement(node: React.ReactNode) {
+  return isValidElement(node) && !isFragment(node);
+}
+```
+这里的isvalidelement就很熟悉了 ，过略掉frament的作用是只保留可以增强的node，因为frament无法传递属性等，获取ref就毫无意义
+
+### isFragment 方法
+```
+const REACT_ELEMENT_TYPE_18 = Symbol.for('react.element');
+const REACT_ELEMENT_TYPE_19 = Symbol.for('react.transitional.element');
+const REACT_FRAGMENT_TYPE = Symbol.for('react.fragment');
+export default function isFragment(object: any) {
+  return (
+    // Base object type
+    object &&
+    typeof object === 'object' &&
+    // React Element type
+    (object.$$typeof === REACT_ELEMENT_TYPE_18 ||
+      object.$$typeof === REACT_ELEMENT_TYPE_19) &&
+    // React Fragment type
+    object.type === REACT_FRAGMENT_TYPE
+  );
+}
+```
+根据type去做判断
+
+
+
+---
+此文自动发布于：<a href="https://github.com/aurora-light/blog/issues/1" target="_blank">github issues</a>
