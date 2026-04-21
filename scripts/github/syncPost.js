@@ -11,24 +11,12 @@ const {
 	GH_PROJECT_NAME = 'blog'
 } = process.env;
 
-// 🚨 强制校验 token
-if (!GH_TOKEN) {
-	console.error('❌ 请设置 GH_TOKEN');
-	process.exit(1);
-}
 function clean(str = '') {
 	return str.replace(/[^a-zA-Z0-9_-]/g, '');
 }
 
 const safeUser = clean(GH_USER);
 const safeRepo = clean(GH_PROJECT_NAME);
-
-// 🚨 校验用户名和仓库名（防止 URL 非法）
-if (!/^[a-zA-Z0-9_-]+$/.test(safeUser) || !/^[a-zA-Z0-9_-]+$/.test(safeRepo)) {
-	console.log(safeUser, safeRepo, 'GH_USER, GH_PROJECT_NAME');
-	console.error('❌ GH_USER 或 GH_PROJECT_NAME 包含非法字符');
-	process.exit(1);
-}
 
 const gh = new GitHub({
 	token: GH_TOKEN
