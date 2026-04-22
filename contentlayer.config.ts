@@ -5,27 +5,6 @@ import rehypePrismPlus from 'rehype-prism-plus';
 import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 
-export const JsonPost = defineDocumentType(() => ({
-	name: 'JsonPost',
-	filePathPattern: `**/*.json`,
-	contentType: 'data', // ⚠️ 关键点：不是 mdx，而是 data
-	fields: {
-		title: { type: 'string', required: true },
-		slug: { type: 'string', required: true },
-		date: { type: 'date', required: true }
-	},
-	computedFields: {
-		url: {
-			type: 'string',
-			resolve: (doc) => `/jsonData/${doc.slug}`
-		},
-		readingTime: {
-			type: 'nested',
-			resolve: (doc) => readingTime(doc.date)
-		}
-	}
-}));
-
 export const Post = defineDocumentType(() => ({
 	name: 'Post',
 	filePathPattern: `**/*.mdx`,
@@ -54,8 +33,8 @@ export const Post = defineDocumentType(() => ({
 export default makeSource({
 	// contentDirPath: 'posts',
 	contentDirPath: '.',
-	contentDirInclude: ['posts', 'data/blog', 'jsonData'],
-	documentTypes: [Post, JsonPost],
+	contentDirInclude: ['posts', 'data/blog'],
+	documentTypes: [Post],
 	mdx: {
 		remarkPlugins: [remarkGfm],
 		rehypePlugins: [
