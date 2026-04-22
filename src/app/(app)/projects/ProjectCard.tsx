@@ -55,7 +55,9 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
 			</h2>
 			<Card.Description>{description}</Card.Description>
 			<div className="mt-4">
-				{tags?.map((ele) => <Tag key={ele}>{ele}</Tag>)}
+				{tags?.map((ele) => (
+					<Tag key={ele}>{ele}</Tag>
+				))}
 			</div>
 			<p className="pointer-events-none relative z-40 mt-6 flex items-center text-sm font-medium text-zinc-400 transition group-hover:-translate-y-0.5 group-hover:text-violet-600 dark:text-zinc-200 dark:group-hover:text-violet-400">
 				<span className="mr-2">{host}</span>

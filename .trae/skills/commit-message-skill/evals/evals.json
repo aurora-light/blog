@@ -1,29 +1,29 @@
 {
-  "skill_name": "commit-message-formatter",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "使用 taskId: 202401, feature flag: feat, message: 添加用户认证功能",
-      "expected_output": "202401+feat: 添加用户认证功能",
-      "files": []
-    },
-    {
-      "id": 2,
-      "prompt": "使用 taskId: default, feature flag: fix, message: 修复登录页面的表单验证",
-      "expected_output": "以 2 开头的六位数字+fix: 修复登录页面的表单验证",
-      "files": []
-    },
-    {
-      "id": 3,
-      "prompt": "使用 taskId: 202403, feature flag: docs, message: 更新 API 文档",
-      "expected_output": "202403+docs: 更新 API 文档",
-      "files": []
-    },
-    {
-      "id": 4,
-      "prompt": "使用 taskId: 202404, feature flag: refactor, message: 重构用户管理模块",
-      "expected_output": "202404+refactor: 重构用户管理模块",
-      "files": []
-    }
-  ]
+	"skill_name": "commit-message-formatter",
+	"evals": [
+		{
+			"id": 1,
+			"prompt": "使用 taskId: 202401, feature flag: feat, message: 添加用户认证功能",
+			"expected_output": "202401+feat: 添加用户认证功能",
+			"files": []
+		},
+		{
+			"id": 2,
+			"prompt": "使用 taskId: default, feature flag: fix, message: 修复登录页面的表单验证",
+			"expected_output": "以 2 开头的六位数字+fix: 修复登录页面的表单验证",
+			"files": []
+		},
+		{
+			"id": 3,
+			"prompt": "使用 taskId: 202403, feature flag: docs, message: 更新 API 文档",
+			"expected_output": "202403+docs: 更新 API 文档",
+			"files": []
+		},
+		{
+			"id": 4,
+			"prompt": "使用 taskId: 202404, feature flag: refactor, message: 重构用户管理模块",
+			"expected_output": "202404+refactor: 重构用户管理模块",
+			"files": []
+		}
+	]
 }
