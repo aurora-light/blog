@@ -33,6 +33,7 @@ export { PencilSwooshIcon } from './icons/PencilSwooshIcon';
 export { QqIcon } from './icons/QQIcon';
 export { RedBookIcon } from './icons/RedBookIcon';
 export { ScriptIcon } from './icons/ScriptIcon';
+export { SleepIcon } from './icons/SleepIcon';
 export { SnailIcon } from './icons/SnailIcon';
 export { SparkleIcon } from './icons/SparkleIcon';
 export { SubscriberIcon } from './icons/SubscriberIcon';

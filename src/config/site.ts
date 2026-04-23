@@ -114,8 +114,8 @@ export const baseSiteConfig: SiteConfig = {
 		{ href: '/projects', text: '项目' },
 		// { href: '/guestbook', text: '留言墙' },
 		// { href: '/ama', text: 'AMA 咨询' },
-		{ href: '/about', text: '关于我' },
-		{ href: '/feed.xml', text: 'rss' }
+		{ href: '/about', text: '关于我' }
+		// { href: '/feed.xml', text: 'rss' }
 		// { href: '/more', text: '更多', menu: true }
 	],
 	moreItems: {
