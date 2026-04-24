@@ -9,9 +9,9 @@ import {
 	DialogTitle,
 	DialogTrigger
 } from '@/components/ui/dialog';
-import dynamic from 'next/dynamic';
 import { useState } from 'react';
-const PdfViewer = dynamic(() => import('./pdf/PdfViewer'), { ssr: false });
+import PdfViewer from './pdf/PdfViewer';
+// const PdfViewer = dynamic(() => import('./pdf/PdfViewer'), { ssr: false });
 
 export function ResumeDialog() {
 	const [open, setOpen] = useState(false);
