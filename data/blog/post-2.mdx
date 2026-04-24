@@ -9,12 +9,12 @@ tags: ["react"]
 ###  使用原生的ResizeObserver进行监听
 
 - 用map存储，实现同个元素的多次监听，存储不同的回掉方法
-     `const elementListeners = new Map<Element, Set<ResizeListener>>();
-`
+   `  const elementListeners = new Map<Element, Set<ResizeListener>>();`
 
 - 注册一个observer实例 
    通常会使用ensure这样的命民方式以来确保某些参数或者属性存在
-  `// Delay create ResizeObserver since it's not supported in server side
+  ```
+// Delay create ResizeObserver since it's not supported in server side
 let observer: ResizeObserver;
 function ensureResizeObserver() {
   if (!observer) {
@@ -22,10 +22,11 @@ function ensureResizeObserver() {
   }
   return observer;
 }
-`
+```
+
 
 - 封装observe和unobseve方法
-   `
+```
 export function observe(element: Element, callback: ResizeListener) {
   if (!elementListeners.has(element)) {
     elementListeners.set(element, new Set());
@@ -42,7 +43,8 @@ export function unobserve(element: Element, callback: ResizeListener) {
     }
   }
 }
-`
+
+```
 ###  封装一个resize组件，仅用于监听
 注意点：
 
@@ -51,7 +53,7 @@ export function unobserve(element: Element, callback: ResizeListener) {
 -  考虑有collection的情况，就是有一个collection包裹，收集所有的监听回掉，需要调用对应的方法
    兼容function写法，function的话则传入对应的noderef, 并使用usecomposedref合并(其实就是利用ref的function功能)，分别给ref赋值
 - 传入 0或者void可以实现依赖的动态监听
-`
+```
  const isRenderProps = typeof children === 'function';
   const mergedChildren = isRenderProps ? children(elementRef) : children;
  
@@ -60,7 +62,7 @@ export function unobserve(element: Element, callback: ResizeListener) {
     !isRenderProps && React.isValidElement(mergedChildren) && supportRef(mergedChildren);
   const originRef: React.Ref<Element> = canRef ? getNodeRef(mergedChildren) : null;
   const mergedRef = useComposeRef(originRef, elementRef);
-`
+```
 ### 封装一个useresizeobserver hook
 
 - 兼容collection写法
@@ -68,7 +70,7 @@ export function unobserve(element: Element, callback: ResizeListener) {
 - 封装sync-这个对应的是collection中传入的方法，delay这个对应的是自身的回掉方法，会将delay就是组件自身的回掉塞入微任务队列中
 
    微任务队列中的时候dom已经完成更新，只是还没渲染，这里能获取到最新的元素，类似于vue的nexttick方法，这里批量更新状态，避免布局抖动
-`
+```
 export default function useResizeObserver(
   enabled: boolean,
   getTarget: HTMLElement | (() => HTMLElement),
@@ -222,7 +224,7 @@ export default function App() {
     </ResizeObserver.Collection>
   );
 }
-`
+```
 
 
 ---
