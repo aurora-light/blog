@@ -1,8 +1,10 @@
+'use client';
 import { PeekabooLink } from '@/components/links/PeekabooLink';
 import siteMetadata from '@/config/site';
 import Link from 'next/link';
 import React from 'react';
 import { Container } from './Container';
+import { ResumeDialog } from './ResumeDialog';
 
 const navigationItems = siteMetadata.navigationItems;
 function NavLink({
@@ -54,10 +56,17 @@ export function Footer() {
 							<Links />
 						</div>
 					</Container.Inner>
-					<Container.Inner className="mt-6">
+					<Container.Inner
+						className={{
+							outer: 'mt-6',
+							inner:
+								'flex flex-col items-center justify-start gap-2 sm:flex-row'
+						}}
+					>
 						<div className="flex flex-col items-center justify-start gap-2 sm:flex-row">
 							欢迎 👏🏻 你的访问
 						</div>
+						<ResumeDialog />
 					</Container.Inner>
 					{/* <Link
 						target="_blank"
