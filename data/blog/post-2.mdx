@@ -1,0 +1,229 @@
+---
+title: "封装一个resizeobserver 用于监听元素的变化"
+date: 2026-04-24T08:59:36Z
+slug: post-2
+author: "aurora-light：https://github.com/aurora-light"
+tags: []
+---
+
+###  使用原生的ResizeObserver进行监听
+
+- 用map存储，实现同个元素的多次监听，存储不同的回掉方法
+     `const elementListeners = new Map<Element, Set<ResizeListener>>();
+`
+
+- 注册一个observer实例 
+   通常会使用ensure这样的命民方式以来确保某些参数或者属性存在
+  `// Delay create ResizeObserver since it's not supported in server side
+let observer: ResizeObserver;
+function ensureResizeObserver() {
+  if (!observer) {
+    observer = new ResizeObserver(onResize);
+  }
+  return observer;
+}
+`
+
+- 封装observe和unobseve方法
+   `
+export function observe(element: Element, callback: ResizeListener) {
+  if (!elementListeners.has(element)) {
+    elementListeners.set(element, new Set());
+    ensureResizeObserver().observe(element);
+  }
+  elementListeners.get(element).add(callback);
+}
+export function unobserve(element: Element, callback: ResizeListener) {
+  if (elementListeners.has(element)) {
+    elementListeners.get(element).delete(callback);
+    if (!elementListeners.get(element).size) {
+      ensureResizeObserver().unobserve(element);
+      elementListeners.delete(element);
+    }
+  }
+}
+`
+###  封装一个resize组件，仅用于监听
+注意点：
+
+-   ref的透传
+-   ref返回实际获取到的dom元素
+-  考虑有collection的情况，就是有一个collection包裹，收集所有的监听回掉，需要调用对应的方法
+   兼容function写法，function的话则传入对应的noderef, 并使用usecomposedref合并(其实就是利用ref的function功能)，分别给ref赋值
+- 传入 0或者void可以实现依赖的动态监听
+`
+ const isRenderProps = typeof children === 'function';
+  const mergedChildren = isRenderProps ? children(elementRef) : children;
+ 
+  // ============================= Ref ==============================
+  const canRef =
+    !isRenderProps && React.isValidElement(mergedChildren) && supportRef(mergedChildren);
+  const originRef: React.Ref<Element> = canRef ? getNodeRef(mergedChildren) : null;
+  const mergedRef = useComposeRef(originRef, elementRef);
+`
+### 封装一个useresizeobserver hook
+
+- 兼容collection写法
+- 传入target,传入回掉函数，这里利用第一步封装的observe方法进行回掉事件的注册。
+- 封装sync-这个对应的是collection中传入的方法，delay这个对应的是自身的回掉方法，会将delay就是组件自身的回掉塞入微任务队列中
+
+   微任务队列中的时候dom已经完成更新，只是还没渲染，这里能获取到最新的元素，类似于vue的nexttick方法，这里批量更新状态，避免布局抖动
+`
+export default function useResizeObserver(
+  enabled: boolean,
+  getTarget: HTMLElement | (() => HTMLElement),
+  onDelayResize?: OnResize,
+  onSyncResize?: OnResize,
+) {
+  // ============================= Size =============================
+  const sizeRef = React.useRef<SizeInfo>({
+    width: -1,
+    height: -1,
+    offsetWidth: -1,
+    offsetHeight: -1,
+  });
+
+  // =========================== Observe ============================
+
+  // Handler
+  const onInternalResize = useEvent((target: HTMLElement) => {
+    const { width, height } = target.getBoundingClientRect();
+    const { offsetWidth, offsetHeight } = target;
+
+    /**
+     * Resize observer trigger when content size changed.
+     * In most case we just care about element size,
+     * let's use `boundary` instead of `contentRect` here to avoid shaking.
+     */
+    const fixedWidth = Math.floor(width);
+    const fixedHeight = Math.floor(height);
+
+    if (
+      sizeRef.current.width !== fixedWidth ||
+      sizeRef.current.height !== fixedHeight ||
+      sizeRef.current.offsetWidth !== offsetWidth ||
+      sizeRef.current.offsetHeight !== offsetHeight
+    ) {
+      const size = { width: fixedWidth, height: fixedHeight, offsetWidth, offsetHeight };
+      sizeRef.current = size;
+
+      // IE is strange, right?
+      const mergedOffsetWidth = offsetWidth === Math.round(width) ? width : offsetWidth;
+      const mergedOffsetHeight = offsetHeight === Math.round(height) ? height : offsetHeight;
+
+      const sizeInfo = {
+        ...size,
+        offsetWidth: mergedOffsetWidth,
+        offsetHeight: mergedOffsetHeight,
+      };
+
+      // Call the callback immediately, let the caller decide whether to defer
+      // onResize(sizeInfo, target);
+      onSyncResize?.(sizeInfo, target);
+
+      // defer the callback but not defer to next frame
+      Promise.resolve().then(() => {
+        onDelayResize?.(sizeInfo, target);
+      });
+    }
+  });
+
+  // Dynamic observe
+  const isFuncTarget = typeof getTarget === 'function';
+  React.useEffect(() => {
+    const target = isFuncTarget ? getTarget() : getTarget;
+
+    if (target && enabled) {
+      observe(target, onInternalResize);
+    }
+
+    return () => {
+      if (target) {
+        unobserve(target, onInternalResize);
+      }
+    };
+  }, [
+    enabled,
+    // When is function, no need to watch it
+    isFuncTarget ? 0 : getTarget,
+  ]);
+}
+`
+### collection组件
+   - 利用id存储一个frame里收集到的其他元素通过sync方法传入的回掉函数，用id判断，只执行最后一次的触发。有点儿类似于请求延时异步返回的问题。
+   - 也是利用了promise.resolve().then这种微任务的方法
+   `const resizeIdRef = React.useRef(0);
+  const resizeInfosRef = React.useRef<ResizeInfo[]>([]);
+
+  const onCollectionResize = React.useContext(CollectionContext);
+
+  const onResize = React.useCallback<onCollectionResize>(
+    (size, element, data) => {
+      resizeIdRef.current += 1;
+      const currentId = resizeIdRef.current;
+
+      resizeInfosRef.current.push({
+        size,
+        element,
+        data,
+      });
+
+      Promise.resolve().then(() => {
+        if (currentId === resizeIdRef.current) {
+          onBatchResize?.(resizeInfosRef.current);
+          resizeInfosRef.current = [];
+        }
+      });
+
+      // Continue bubbling if parent exist
+      onCollectionResize?.(size, element, data);
+    },
+    [onBatchResize, onCollectionResize],
+  );`
+  每个frame里的回掉都会收集，只有最后一个触发的回掉，才会出发batchresize方法
+### 使用方式
+`
+export default function App() {
+  const [size1, setSize1] = React.useState(randomSize());
+  const [size2, setSize2] = React.useState(randomSize());
+
+  console.log('Render:', size1, size2);
+
+  return (
+    <ResizeObserver.Collection
+      onBatchResize={infoList => {
+        console.log(
+          'Batch Resize:',
+          infoList,
+          infoList.map(({ data, size }) => `${data}(${size.width}/${size.height})`),
+        );
+      }}
+    >
+      <div style={{ display: 'flex', columnGap: 4, marginBottom: 8 }}>
+        <button onClick={() => setSize1(randomSize())}>Resize: 1</button>
+        <button onClick={() => setSize2(randomSize())}>Resize: 2</button>
+        <button
+          onClick={() => {
+            setSize1(randomSize());
+            setSize2(randomSize());
+          }}
+        >
+          Resize: all
+        </button>
+      </div>
+      <div style={{ display: 'flex', columnGap: 16 }}>
+        <ResizeObserver data="shape_1">
+          <div style={{ ...sharedStyle, ...size1, background: 'red' }}>1</div>
+        </ResizeObserver>
+        <ResizeObserver data="shape_2">
+          <div style={{ ...sharedStyle, ...size2, background: 'blue' }}>2</div>
+        </ResizeObserver>
+      </div>
+    </ResizeObserver.Collection>
+  );
+}
+`
+
+
+---
+此文自动发布于：<a href="https://github.com/aurora-light/blog/issues/2" target="_blank">github issues</a>
