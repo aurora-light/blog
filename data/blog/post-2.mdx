@@ -13,9 +13,8 @@ tags: ["react"]
 
 - 注册一个observer实例 
    通常会使用ensure这样的命民方式以来确保某些参数或者属性存在
-  ```
-// Delay create ResizeObserver since it's not supported in server side
-let observer: ResizeObserver;
+```
+  let observer: ResizeObserver;
 function ensureResizeObserver() {
   if (!observer) {
     observer = new ResizeObserver(onResize);
@@ -27,6 +26,7 @@ function ensureResizeObserver() {
 
 - 封装observe和unobseve方法
 ```
+
 export function observe(element: Element, callback: ResizeListener) {
   if (!elementListeners.has(element)) {
     elementListeners.set(element, new Set());
@@ -43,7 +43,6 @@ export function unobserve(element: Element, callback: ResizeListener) {
     }
   }
 }
-
 ```
 ###  封装一个resize组件，仅用于监听
 注意点：
@@ -150,11 +149,12 @@ export default function useResizeObserver(
     isFuncTarget ? 0 : getTarget,
   ]);
 }
-`
+```
 ### collection组件
    - 利用id存储一个frame里收集到的其他元素通过sync方法传入的回掉函数，用id判断，只执行最后一次的触发。有点儿类似于请求延时异步返回的问题。
    - 也是利用了promise.resolve().then这种微任务的方法
-   `const resizeIdRef = React.useRef(0);
+``` 
+const resizeIdRef = React.useRef(0);
   const resizeInfosRef = React.useRef<ResizeInfo[]>([]);
 
   const onCollectionResize = React.useContext(CollectionContext);
@@ -181,10 +181,11 @@ export default function useResizeObserver(
       onCollectionResize?.(size, element, data);
     },
     [onBatchResize, onCollectionResize],
-  );`
+  );
+```
   每个frame里的回掉都会收集，只有最后一个触发的回掉，才会出发batchresize方法
 ### 使用方式
-`
+```
 export default function App() {
   const [size1, setSize1] = React.useState(randomSize());
   const [size2, setSize2] = React.useState(randomSize());
