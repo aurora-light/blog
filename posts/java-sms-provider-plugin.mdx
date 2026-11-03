@@ -1,0 +1,158 @@
+---
+title: Java 项目学习笔记：多个短信供应商如何接入同一个系统
+description: 从短信插件模块理解接口抽象、Provider 适配、配置定义和 PF4J 插件入口，逐步认识可扩展设计。
+date: 2026-11-03T00:00:00+08:00
+slug: java-sms-provider-plugin
+author: aurora-light：https://github.com/auroralight
+tags: ['Java', '设计模式', '插件化', '短信服务']
+---
+
+如果系统最初只有一个短信供应商，发送逻辑可能只是一个 HTTP 请求。但接入第二家后，鉴权、参数、模板、返回码都可能不同，业务代码很容易堆满 `if/else`。
+
+我阅读的项目把不同短信渠道放进独立插件模块。本文记录能从本地源码确认的职责分工，并用供应商 A、B 举例；通用示例不是项目原有接口的完整复制。
+
+## 一、先把业务目标和供应商协议分开
+
+业务方关心的是“给哪些号码发送什么通知”，供应商适配层关心的是“用什么协议和参数提交”。
+
+```text
+业务服务
+→ 短信网关 / 扩展选择
+→ 统一的短信扩展接口
+→ 供应商 A 或 B 的 Provider
+→ 外部短信平台
+```
+
+业务层不应直接依赖供应商的签名字段、URL 和响应结构。这样更换供应商时，主要改动集中在边界适配层。
+
+不过，接口统一不等于平台能力相同：有的平台支持直接内容，有的平台只支持已审核模板，有的平台限制批量数量。这些差异必须显式表达。
+
+## 二、项目里的插件目录
+
+本地短信插件模块包括多个供应商实现。单个模块可以概括为：
+
+```text
+sms-provider-plugin/
+├── pom.xml
+└── src/main/
+    ├── java/
+    │   ├── VendorSmsPlugin.java
+    │   ├── provider/VendorSmsDefinition.java
+    │   ├── provider/VendorSmsProvider.java
+    │   └── config/VendorSmsProperties.java
+    └── resources/
+        └── 配置描述等插件资源
+```
+
+这里最容易混淆的是 Plugin、Definition 和 Provider，它们并不是三个名字相似的发送类。
+
+| 角色 | 职责 |
+| --- | --- |
+| Plugin | 插件入口，接入宿主插件框架 |
+| Definition | 描述服务类型、标识、配置结构并校验配置 |
+| Provider | 实现单发、批发、模板等发送能力 |
+| Properties | 接收某个供应商的专属配置 |
+
+## 三、Provider 负责协议适配
+
+项目中的 Provider 实现了 `SmsProviderExtPt`，提供发送模式、批量支持情况以及发送方法。通用化的接口可以先写成：
+
+```java
+public interface SmsProvider {
+    boolean supportsTemplate();
+
+    boolean supportsBatch();
+
+    SmsResult send(SmsRequest request);
+}
+```
+
+`SmsRequest`、`SmsResult` 是示例中需要另行定义的 DTO，不是 JDK 自带类型。它们应当描述业务输入与统一结果，而不是原样暴露供应商 JSON。
+
+Provider 内部通常包含：
+
+```text
+校验号码数量和内容
+→ 读取供应商配置
+→ 编码参数、构造请求
+→ 设置连接和读取超时
+→ 执行 HTTP 调用
+→ 解析供应商响应
+→ 转换为统一结果或异常
+```
+
+我查看的一个实现支持内容短信和批量发送，但模板发送方法直接抛出不支持异常。因此调用方应先了解能力，不应假定所有 Provider 都支持所有方法。
+
+## 四、Definition 为什么单独存在
+
+项目的 Definition 包含服务编码、展示名称、服务类型、配置 schema 以及属性校验。
+
+例如，配置中需要服务地址、账号和密码，应该在保存配置或启用服务时尽早校验，而不是直到用户请求发送才发现少了字段。
+
+Definition 校验也不能代替运行时保护。配置可能被动态修改，调用时仍应检查必要参数和供应商限制。
+
+对超时、TLS、错误码映射等规则，最好明确默认值和允许范围，避免每个 Provider 用一套不兼容的约定。
+
+## 五、插件入口与普通策略实现有什么不同
+
+项目的插件入口继承了宿主封装的 `BaseSpringPlugin`，构造方法接收 PF4J 的 `PluginWrapper`。POM 中声明插件 ID、入口类、版本等信息。
+
+PF4J 提供插件和扩展的组织、加载及生命周期能力；可以结合[插件文档](https://pf4j.org/doc/plugins.html)和[生命周期文档](https://pf4j.org/doc/plugin-lifecycle.html)理解这些概念。
+
+项目的 Provider、Definition 上使用的是宿主框架的 `@BizExtension`，不是直接照搬 PF4J 的 `@Extension`。其注册、选择和 Spring 集成细节需要继续阅读宿主依赖，不能仅凭一个注解推断所有行为。
+
+同样，看到插件 JAR 也不能直接断言项目已经实现“无损热更新”。真实加载入口、启停过程、类加载器、线程和连接释放，以及发布兼容性都需要单独确认。
+
+## 六、策略、适配器和插件各解决什么
+
+- 策略：面对同一类任务，选择不同实现。
+- 适配器：把供应商不同的协议转换为系统统一接口。
+- 插件机制：管理实现如何被发现、加载和组织，以及相关生命周期。
+
+一个 Provider 可以同时体现策略和适配器的思想；插件框架则解决更外层的扩展管理问题。不要因为出现多个实现类，就把它们全部叫作插件。
+
+## 七、初学者可以先做一个更小的实验
+
+第一步不必引入 PF4J。用 Spring 管理两个假的 Provider，再用 Map 按标识选择即可：
+
+```java
+public class SmsRouter {
+    private final Map<String, SmsProvider> providers;
+
+    public SmsRouter(Map<String, SmsProvider> providers) {
+        this.providers = providers;
+    }
+
+    public SmsResult send(String code, SmsRequest request) {
+        SmsProvider provider = providers.get(code);
+        if (provider == null) {
+            throw new IllegalArgumentException("未知短信供应商");
+        }
+        return provider.send(request);
+    }
+}
+```
+
+示例省略了 DTO 和 Spring Bean 配置。两个假实现只记录脱敏请求并返回模拟结果，不连接真实短信平台。
+
+完成后再把供应商特有字段收进配置类，把请求转换放进 Provider，把能力描述和配置校验提取出来。最后学习插件框架，才能理解框架是在替自己管理哪些事情。
+
+## 八、HTTP 成功不等于短信送达
+
+项目中的适配逻辑会解析供应商业务响应。这一步很重要：HTTP 200 可能只是请求处理成功，供应商业务码仍然可能表示拒绝受理。
+
+即便平台已经受理，也不等于用户手机已收到短信。需要送达结果时，还应对接回执或查询接口。
+
+网络超时尤其不能直接认定“没有发送”，因为平台可能已经处理了请求。是否重试、是否切换供应商，应结合请求号、平台幂等能力与对账机制设计，否则容易重复扣费、重复通知。
+
+如果供应商协议要求把账号或密码放进 URL，必须注意网关日志、代理日志和异常日志也可能留下参数。应使用 HTTPS、限制日志内容，并在可行时优先选择更合适的协议；不能因为应用日志遮住了密码就认为所有链路都安全。
+
+## 九、测试与依赖管理
+
+建议覆盖未知供应商、缺少配置、不支持模板、批量数量超限、HTTP 超时、非成功业务码和重复请求等场景。通过假的 HTTP 服务验证参数编码、超时与结果解析，不在单元测试中发送真实短信。
+
+项目 POM 中多项依赖采用 `provided`，表示编译时需要，但运行时预期由宿主提供。插件和宿主必须约定兼容版本；把全部框架依赖各打包一份，可能形成类冲突。
+
+写插件不能只验证“编译成功”，还要验证实际产物、宿主加载、扩展注册、配置生效和资源释放。宿主框架的公共接口版本变化，也需要做兼容性测试。
+
+这个主题让我理解了接口的价值：它不仅是让两个类写出相同的方法名，更是在业务和外部变化之间建立边界，让每一层只承担自己能够稳定负责的事情。
