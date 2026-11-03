@@ -3,7 +3,7 @@
 import { SleepIcon, SparkleIcon } from '@/assets';
 import { SocialLink } from '@/components/links/SocialLink';
 import siteMetadata from '@/config/site';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import Balancer from 'react-wrap-balancer';
 
 function Developer() {

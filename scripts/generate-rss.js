@@ -25,7 +25,9 @@ async function generate() {
 	const allPosts = await Promise.all(
 		folders.map(async (folder) => {
 			const files = await fs.readdir(folder);
-			return files.map((file) => ({ file, folder }));
+			return files
+				.filter((file) => /\.mdx?$/.test(file))
+				.map((file) => ({ file, folder }));
 		})
 	);
 

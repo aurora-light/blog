@@ -14,7 +14,7 @@ import {
 	motion,
 	useMotionTemplate,
 	useMotionValue
-} from 'framer-motion';
+} from 'motion/react';
 import { usePathname } from 'next/navigation';
 import React from 'react';
 import { Avatar } from './Avatar';
@@ -166,7 +166,7 @@ export function Header() {
 						<>
 							<div
 								ref={avatarRef}
-								className="order-last mt-[calc(theme(spacing.16)-theme(spacing.3))]"
+								className="order-last mt-[calc(var(--spacing-16)-var(--spacing-3))]"
 							/>
 							<Container
 								className="top-0 order-last -mb-3 pt-3"
@@ -176,7 +176,7 @@ export function Header() {
 								}}
 							>
 								<motion.div
-									className="top-[var(--avatar-top,theme(spacing.3))] w-full select-none"
+									className="top-[var(--avatar-top,var(--spacing-3))] w-full select-none"
 									style={{
 										position:
 											'var(--header-inner-position)' as React.CSSProperties['position']
@@ -231,7 +231,7 @@ export function Header() {
 					}}
 				>
 					<Container
-						className="top-[var(--header-top,theme(spacing.6))] w-full"
+						className="top-[var(--header-top,var(--spacing-6))] w-full"
 						style={{
 							position:
 								'var(--header-inner-position)' as React.CSSProperties['position']
@@ -296,7 +296,7 @@ export function Header() {
 					</Container>
 				</div>
 			</motion.header>
-			{isHomePage && <div className="h-[--content-offset]" />}
+			{isHomePage && <div className="h-(--content-offset)" />}
 		</>
 	);
 }

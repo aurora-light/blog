@@ -1,7 +1,7 @@
 'use client';
 
 import '@/style/tocbot.css';
-import { Variants, motion, useScroll } from 'framer-motion';
+import { Variants, motion, useScroll } from 'motion/react';
 import { useEffect } from 'react';
 import tocbot from 'tocbot';
 

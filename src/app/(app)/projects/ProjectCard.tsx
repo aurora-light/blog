@@ -8,7 +8,7 @@ import {
 	motion,
 	useMotionTemplate,
 	useMotionValue
-} from 'framer-motion';
+} from 'motion/react';
 import Image from 'next/image';
 import React from 'react';
 

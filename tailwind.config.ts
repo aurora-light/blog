@@ -1,17 +1,20 @@
 import type { Config } from 'tailwindcss';
 
 const config = {
-	darkMode: ['class'],
+	darkMode: 'class',
 	content: [
 		'./pages/**/*.{ts,tsx}',
 		'./components/**/*.{ts,tsx}',
 		'./app/**/*.{ts,tsx}',
-		'./src/**/*.{ts,tsx}'
+		'./src/**/*.{ts,tsx}',
+		'./node_modules/streamdown/dist/*.js',
+		'./node_modules/@streamdown/cjk/dist/*.js',
+		'./node_modules/@streamdown/code/dist/*.js',
+		'./node_modules/@streamdown/math/dist/*.js',
+		'./node_modules/@streamdown/mermaid/dist/*.js'
 	],
 	prefix: '',
 	theme: {
-		transparent: 'transparent',
-		current: 'currentColor',
 		fontSize: {
 			xs: ['0.8125rem', { lineHeight: '1.5rem' }],
 			sm: ['0.875rem', { lineHeight: '1.5rem' }],
@@ -238,7 +241,7 @@ const config = {
 						marginBottom: theme('spacing.10'),
 						borderTopWidth: '1px',
 						borderColor: 'var(--tw-prose-hr)',
-						'@screen lg': {
+						[`@media (min-width: ${theme('screens.lg')})`]: {
 							marginLeft: `calc(${theme('spacing.12')} * -1)`,
 							marginRight: `calc(${theme('spacing.12')} * -1)`
 						}

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Post } from 'contentlayer/generated';
+import type { Post } from 'contentlayer2/generated';
 import dayjs from 'dayjs';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
@@ -61,7 +61,7 @@ export function PostsTimeline({ posts }: PostsTimelineProps) {
 					onChange={(event) => setQuery(event.target.value)}
 					placeholder="搜索文章标题、标签或简介"
 					aria-label="搜索文章"
-					className="w-full rounded-md border border-zinc-200 bg-background py-2 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+					className="w-full rounded-md border border-zinc-200 bg-background py-2 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-violet-500 focus:outline-hidden focus:ring-2 focus:ring-violet-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
 				/>
 			</div>
 
@@ -84,7 +84,7 @@ export function PostsTimeline({ posts }: PostsTimelineProps) {
 							<div className="space-y-8 border-l border-border/60 pl-6 dark:border-border/40">
 								{items.map((post) => (
 									<article key={post.slug} className="relative">
-										<span className="absolute -left-[9px] top-1.5 inline-flex h-3 w-3 items-center justify-center rounded-full border-2 border-background bg-violet-500 shadow dark:border-zinc-950 dark:bg-violet-400" />
+										<span className="absolute -left-[9px] top-1.5 inline-flex h-3 w-3 items-center justify-center rounded-full border-2 border-background bg-violet-500 shadow-sm dark:border-zinc-950 dark:bg-violet-400" />
 										<div className="rounded-lg border border-border/60 bg-card/40 p-4 transition-colors hover:border-violet-500/40 hover:bg-card">
 											<div className="flex flex-col gap-2">
 												<time

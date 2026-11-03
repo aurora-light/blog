@@ -1,5 +1,5 @@
 import { constructSiteUrl } from '@/lib';
-import { allPosts } from 'contentlayer/generated';
+import { allPosts } from 'contentlayer2/generated';
 import { type MetadataRoute } from 'next';
 
 export function generateStaticParams() {

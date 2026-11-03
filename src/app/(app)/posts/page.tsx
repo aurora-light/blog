@@ -1,5 +1,5 @@
 import { Container } from '@/components/Container';
-import { allPosts } from 'contentlayer/generated';
+import { allPosts } from 'contentlayer2/generated';
 import CoverSwitch from './CoverSwitch';
 import { PostsTimeline } from './PostsTimeline';
 const title = '我的博客列表 | ';

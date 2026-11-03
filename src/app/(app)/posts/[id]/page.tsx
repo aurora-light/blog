@@ -5,9 +5,9 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Separator } from '@/components/ui/separator';
 import siteMetadata from '@/config/site';
 import { cn } from '@/lib/utils';
-import { allPosts, type Post } from 'contentlayer/generated';
+import { allPosts, type Post } from 'contentlayer2/generated';
 import dayjs from 'dayjs';
-import { useMDXComponent } from 'next-contentlayer/hooks';
+import { getMDXComponent } from 'next-contentlayer2/hooks';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -18,7 +18,7 @@ const variantStyles = {
 	primary:
 		'bg-zinc-800 font-semibold text-zinc-100 hover:bg-zinc-700 active:bg-zinc-800 active:text-zinc-100/70 dark:bg-zinc-200 dark:text-black dark:hover:bg-zinc-300 dark:active:bg-zinc-300/70',
 	secondary:
-		'group rounded-full bg-gradient-to-b from-zinc-50/50 to-white/90 px-3 py-2 shadow-lg shadow-zinc-800/5 ring-1 ring-zinc-900/5 backdrop-blur transition dark:from-zinc-900/50 dark:to-zinc-800/90 dark:ring-white/10 dark:hover:ring-white/20'
+		'group rounded-full bg-gradient-to-b from-zinc-50/50 to-white/90 px-3 py-2 shadow-lg shadow-zinc-800/5 ring-1 ring-zinc-900/5 backdrop-blur-sm transition dark:from-zinc-900/50 dark:to-zinc-800/90 dark:ring-white/10 dark:hover:ring-white/20'
 };
 interface TypeParams {
 	id: string;
@@ -29,9 +29,14 @@ export async function generateStaticParams() {
 		id: post.slug
 	}));
 }
-export const generateMetadata = ({ params }: { params: TypeParams }) => {
-	const post = allPosts.find((post) => post.slug === params.id);
-	if (!post) throw new Error(`Post not found for id: ${params.id}`);
+export const generateMetadata = async ({
+	params
+}: {
+	params: Promise<TypeParams>;
+}) => {
+	const { id } = await params;
+	const post = allPosts.find((post) => post.slug === id);
+	if (!post) throw new Error(`Post not found for id: ${id}`);
 	const title = post.title;
 	const description =
 		post.description ?? post.title + ' - ' + siteMetadata.authors;
@@ -50,11 +55,12 @@ export const generateMetadata = ({ params }: { params: TypeParams }) => {
 	};
 };
 
-const Page = ({ params }: { params: TypeParams }) => {
+const Page = async ({ params }: { params: Promise<TypeParams> }) => {
+	const { id } = await params;
 	let postIndex = 0;
 	const post = allPosts.find((post) => {
 		postIndex++;
-		return post.slug === params.id;
+		return post.slug === id;
 	});
 	const sortedPosts = allPosts
 		.sort((a, b) => {
@@ -63,7 +69,7 @@ const Page = ({ params }: { params: TypeParams }) => {
 		})
 		.slice(0, allPosts.length - 1);
 	if (!post) notFound();
-	const MDXContent = useMDXComponent(post.body.code);
+	const MDXContent = getMDXComponent(post.body.code);
 	console.log(post.readingTime, 'post');
 	// 找到上一个和下一个帖子
 	const prevPost = sortedPosts[postIndex - 2];
@@ -156,7 +162,7 @@ const Page = ({ params }: { params: TypeParams }) => {
 								<Link
 									href={`/posts/${prevPost.slug}`}
 									className={cn(
-										'inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm  font-medium text-violet-500  dark:text-violet-300 shadow-sm hover:bg-violet-200 dark:hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:ring-offset-2'
+										'inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm  font-medium text-violet-500  dark:text-violet-300 shadow-xs hover:bg-violet-200 dark:hover:bg-violet-500 focus:outline-hidden focus:ring-2 focus:ring-violet-600 focus:ring-offset-2'
 									)}
 								>
 									{computeTitle(prevPost)}
@@ -172,7 +178,7 @@ const Page = ({ params }: { params: TypeParams }) => {
 								<Link
 									href={`/posts/${nextPost.slug}`}
 									className={cn(
-										'inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm font-medium text-violet-500 dark:text-violet-300 shadow-sm hover:bg-violet-200  dark:hover:bg-violet-500  focus:outline-none focus:ring-2 focus:ring-violet-600 focus:ring-offset-2'
+										'inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm font-medium text-violet-500 dark:text-violet-300 shadow-xs hover:bg-violet-200  dark:hover:bg-violet-500  focus:outline-hidden focus:ring-2 focus:ring-violet-600 focus:ring-offset-2'
 									)}
 								>
 									{computeTitle(nextPost)}

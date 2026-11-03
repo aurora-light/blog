@@ -1,6 +1,6 @@
 import { Container } from '@/components/Container';
-import { allPosts } from 'contentlayer/generated';
-import { useMDXComponent } from 'next-contentlayer/hooks';
+import { allPosts } from 'contentlayer2/generated';
+import { getMDXComponent } from 'next-contentlayer2/hooks';
 import { notFound } from 'next/navigation';
 
 export const generateMetadata = () => {
@@ -26,7 +26,7 @@ export const generateMetadata = () => {
 const AboutPage = () => {
 	const post = allPosts.find((post) => post.slug === 'about');
 	if (!post) notFound();
-	const MDXContent = useMDXComponent(post.body.code);
+	const MDXContent = getMDXComponent(post.body.code);
 
 	return (
 		<Container className="mt-16">

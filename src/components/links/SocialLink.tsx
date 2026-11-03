@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/tooltip';
 import { copyTextToClipboard } from '@/lib';
 import { makeBlurDataURL } from '@/lib/images';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import Image, { StaticImageData } from 'next/image';
 import Link, { type LinkProps } from 'next/link';
 import React, { FC } from 'react';

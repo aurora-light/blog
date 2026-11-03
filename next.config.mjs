@@ -1,22 +1,20 @@
-import { withContentlayer } from 'next-contentlayer';
-import generate from './scripts/generate-rss.js';
+import { withContentlayer } from 'next-contentlayer2';
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-	// 静态导出
-	output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
 	reactStrictMode: true,
-	swcMinify: true,
+	serverExternalPackages: ['@vercel/blob'],
 	images: {
-		domains: ['blog-1304565468.cos.ap-shanghai.myqcloud.com', 'github.com']
-	},
-	webpack: (config, { isServer }) => {
-		// if (isServer) {
-		// 	require('./scripts/generate-sitemap'); // eslint-disable-line
-		// 	require('./scripts/generate-rss'); // eslint-disable-line
-		// }
-		generate();
-		return config;
+		remotePatterns: [
+			{
+				protocol: 'https',
+				hostname: 'blog-1304565468.cos.ap-shanghai.myqcloud.com'
+			},
+			{
+				protocol: 'https',
+				hostname: 'github.com'
+			}
+		]
 	}
 };
 

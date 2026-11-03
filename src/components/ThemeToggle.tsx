@@ -1,12 +1,11 @@
 'use client';
 import { Switch } from '@/components/ui/switch';
 import 'client-only';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useRef, useState } from 'react';
 import useThemeToggleAnimation from '../hooks/useThemeToggleAnimation';
-import { Toaster } from './ui/sonner';
 
 export default function ThemeToggle() {
 	const eventRef = useRef<AnyIfEmpty>(null);
@@ -83,13 +82,12 @@ export default function ThemeToggle() {
 					)}
 				</motion.div>
 			</Switch>
-			<Toaster theme={theme ?? 'light'} richColors />
 		</div>
 	);
 }
 
 const spring = {
-	type: 'spring',
+	type: 'spring' as const,
 	stiffness: 900,
 	damping: 80
 };
