@@ -1,19 +1,12 @@
-'use client';
 import { PeekabooLink } from '@/components/links/PeekabooLink';
 import siteMetadata from '@/config/site';
 import Link from 'next/link';
-import React from 'react';
+import type { ReactNode } from 'react';
 import { Container } from './Container';
 import { ResumeDialog } from './ResumeDialog';
 
 const navigationItems = siteMetadata.navigationItems;
-function NavLink({
-	href,
-	children
-}: {
-	href: string;
-	children: React.ReactNode;
-}) {
+function NavLink({ href, children }: { href: string; children: ReactNode }) {
 	return (
 		<Link
 			href={href}
@@ -63,9 +56,6 @@ export function Footer() {
 								'flex flex-col items-center justify-start gap-2 sm:flex-row'
 						}}
 					>
-						<div className="flex flex-col items-center justify-start gap-2 sm:flex-row">
-							欢迎 👏🏻 你的访问
-						</div>
 						<ResumeDialog />
 					</Container.Inner>
 					{/* <Link

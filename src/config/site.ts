@@ -132,7 +132,7 @@ export const baseSiteConfig: SiteConfig = {
 	},
 	footerItems: [{ href: '/', text: '首页' }],
 	locale: 'zh-CN',
-	siteHostList: ['dino.cn', 'lucky-snail.vercel.app']
+	siteHostList: ['lesliecode.cn', 'dino.cn', 'lucky-snail.vercel.app']
 };
 
 const siteMetadata: SiteConfig = {
