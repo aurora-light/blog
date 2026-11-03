@@ -28,7 +28,19 @@
 		"editor.formatOnSave": true,
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
+
+	"[markdown]": {
+		"editor.formatOnSave": false,
+		"editor.tabSize": 2,
+		"editor.insertSpaces": true
+	},
+	"[mdx]": {
+		"editor.formatOnSave": false,
+		"editor.tabSize": 2,
+		"editor.insertSpaces": true
+	},
 	"prettier.ignorePath": ".gitignore",
 	"commentTranslate.hover.enabled": true,
-	"testing.automaticallyOpenTestResults": "neverOpen" // Don't run prettier for files listed in .gitignore
+	"testing.automaticallyOpenTestResults": "neverOpen",
+	"svn.ignoreMissingSvnWarning": true // Don't run prettier for files listed in .gitignore
 }
