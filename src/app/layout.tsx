@@ -1,5 +1,8 @@
 import BaiDuAnalytics from '@/components/BaiDuAnalytics';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import { ChatShell } from '@/components/chat/ChatShell';
+import { DataStreamProvider } from '@/components/chat/data-stream-provider';
+import { Toaster } from '@/components/ui/sonner';
 import siteMetadata from '@/config/site';
 import { constructSiteUrl } from '@/lib';
 import { sansFont } from '@/lib/font';
@@ -63,6 +66,10 @@ export default function RootLayout({
 					disableTransitionOnChange
 				>
 					{children}
+					<DataStreamProvider>
+						<ChatShell />
+					</DataStreamProvider>
+					<Toaster richColors />
 				</ThemeProvider>
 			</body>
 		</html>
