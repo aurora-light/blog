@@ -1,6 +1,12 @@
 'use client';
 
-import type { DataUIPart, UIMessage } from 'ai';
+import type { DataUIPart } from 'ai';
+import type { CustomUIDataTypes, WaitingStatusData } from '@/lib/chat-types';
+export type {
+	CustomChatMessage,
+	CustomUIDataTypes,
+	WaitingStatusData
+} from '@/lib/chat-types';
 import {
 	createContext,
 	type Dispatch,
@@ -10,19 +16,6 @@ import {
 	useMemo,
 	useState
 } from 'react';
-
-export type WaitingStatusData = {
-	phase: 'waiting' | 'still-waiting' | 'health' | 'thinking';
-	message: string;
-	modelId: string;
-	modelName: string;
-};
-
-export type CustomUIDataTypes = {
-	'waiting-status': WaitingStatusData;
-};
-
-export type CustomChatMessage = UIMessage<unknown, CustomUIDataTypes>;
 
 type DataStreamContextValue = {
 	dataStream: DataUIPart<CustomUIDataTypes>[];

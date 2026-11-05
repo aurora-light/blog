@@ -1,9 +1,16 @@
-import { createOpenAI } from '@ai-sdk/openai';
+import { getChatProvider, getChatModelId } from '@/lib/chat-provider';
 import { ChatbotError } from '@/lib/errors';
 import { checkIpRateLimit } from '@/lib/ratelimit';
+import { getBlogRetrieval } from '@/lib/rag';
+import { BLOG_SYSTEM_PROMPT } from '@/lib/prompts';
+import type { CustomChatMessage } from '@/lib/chat-types';
+import type { RagTrace } from '@leslie/search-core/rag';
 import {
 	convertToModelMessages,
+	createUIMessageStream,
+	createUIMessageStreamResponse,
 	safeValidateUIMessages,
+	generateText,
 	streamText,
 	type UIMessage
 } from 'ai';
@@ -12,23 +19,6 @@ export const maxDuration = 30;
 
 const MAX_MESSAGES = 30;
 const MAX_MESSAGE_LENGTH = 2000;
-
-function getProvider() {
-	const apiKey =
-		process.env.AI_API_KEY ??
-		process.env.OPENAI_API_KEY ??
-		process.env.LLM_API_KEY;
-
-	if (!apiKey) {
-		throw new Error('缺少 AI_API_KEY、OPENAI_API_KEY 或 LLM_API_KEY 环境变量');
-	}
-	const baseURL = process.env.AI_BASE_URL ?? process.env.LLM_BASE_URL;
-
-	return createOpenAI({
-		apiKey,
-		...(baseURL ? { baseURL } : {})
-	});
-}
 
 function getTextLength(messages: UIMessage[]) {
 	return messages.reduce(
@@ -80,25 +70,96 @@ export async function POST(request: Request) {
 			request.headers.get('x-real-ip')?.trim();
 		await checkIpRateLimit(ip);
 
-		const provider = getProvider();
-		const modelId =
-			process.env.AI_MODEL ??
-			process.env.LLM_MODEL_ID ??
-			process.env.MODEL_ID ??
-			'gpt-4o-mini';
-		const result = streamText({
-			model: provider(modelId),
-			system: [
-				'你是“睡不醒的啊轩”的博客 AI 助手。',
-				'请使用简洁、友好、准确的中文回答。',
-				'你擅长前端开发、Next.js、Python、FastAPI 和 AI 应用开发。',
-				'如果不知道答案，请直接说明，不要捏造博客或作者的信息。'
-			].join('\n'),
-			messages: await convertToModelMessages(messages),
-			maxOutputTokens: 1200
+		const provider = getChatProvider();
+		const modelId = getChatModelId();
+		const modelMessages = await convertToModelMessages(messages);
+		const stream = createUIMessageStream<CustomChatMessage>({
+			execute: async ({ writer }) => {
+				writer.write({ type: 'start' });
+				const startedAt = Date.now();
+				writer.write({
+					type: 'data-article-retrieval',
+					id: 'article-retrieval',
+					data: { status: 'searching', sources: [] }
+				});
+				let retrieval;
+				let trace: RagTrace | undefined;
+				try {
+					request.signal.throwIfAborted();
+					retrieval = await getBlogRetrieval(messages, {
+						signal: request.signal,
+						generateQueryPlan:
+							process.env.AI_QUERY_PLANNING === 'false'
+								? undefined
+								: async ({ system, prompt, signal }) => {
+										const result = await generateText({
+											model: provider(process.env.AI_QUERY_MODEL ?? modelId),
+											system,
+											prompt,
+											abortSignal: signal,
+											maxOutputTokens: 400,
+											maxRetries: 0
+										});
+										return result.text;
+									},
+						onEvent: (event) => {
+							trace = event;
+							writer.write({
+								type: 'data-article-retrieval',
+								id: 'article-retrieval',
+								data: {
+									status: 'searching',
+									sources: [],
+									trace: event,
+									durationMs: Date.now() - startedAt
+								}
+							});
+						}
+					});
+					writer.write({
+						type: 'data-article-retrieval',
+						id: 'article-retrieval',
+						data: {
+							status: 'complete',
+							sources: retrieval.sources,
+							trace,
+							durationMs: Date.now() - startedAt
+						}
+					});
+				} catch (error) {
+					writer.write({
+						type: 'data-article-retrieval',
+						id: 'article-retrieval',
+						data: {
+							status: 'error',
+							sources: [],
+							trace,
+							durationMs: Date.now() - startedAt
+						}
+					});
+					throw error;
+				}
+				const result = streamText({
+					model: provider(modelId),
+					system: [BLOG_SYSTEM_PROMPT, retrieval.context].join('\n'),
+					messages: modelMessages,
+					abortSignal: request.signal,
+					maxOutputTokens: 1200
+				});
+				writer.merge(
+					result.toUIMessageStream({
+						sendStart: false,
+						onError: () => '回答生成失败，请稍后重试。'
+					})
+				);
+			},
+			onError: (error) => {
+				console.error('Chat stream error:', error);
+				return 'AI 服务暂时不可用，请稍后再试';
+			}
 		});
 
-		return result.toUIMessageStreamResponse();
+		return createUIMessageStreamResponse({ stream });
 	} catch (error) {
 		if (error instanceof ChatbotError) {
 			return error.toResponse();

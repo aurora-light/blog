@@ -128,6 +128,7 @@ export const Reasoning = memo(
 
 		const hasEverStreamedRef = useRef(isStreaming);
 		const [hasAutoClosed, setHasAutoClosed] = useState(false);
+		const [hasUserToggled, setHasUserToggled] = useState(false);
 		const startTimeRef = useRef<number | null>(null);
 
 		// Track when streaming starts and compute duration
@@ -143,12 +144,12 @@ export const Reasoning = memo(
 			}
 		}, [isStreaming, setDuration]);
 
-		// Auto-open when streaming starts (unless explicitly closed)
+		// Automatic transitions must not override the user's choice.
 		useEffect(() => {
-			if (isStreaming && !isOpen && !isExplicitlyClosed) {
+			if (!hasUserToggled && isStreaming && !isOpen && !isExplicitlyClosed) {
 				setIsOpen(true);
 			}
-		}, [isStreaming, isOpen, setIsOpen, isExplicitlyClosed]);
+		}, [isStreaming, isOpen, setIsOpen, isExplicitlyClosed, hasUserToggled]);
 
 		// Auto-close when streaming ends (once only, and only if it ever streamed)
 		useEffect(() => {
@@ -156,7 +157,8 @@ export const Reasoning = memo(
 				hasEverStreamedRef.current &&
 				!isStreaming &&
 				isOpen &&
-				!hasAutoClosed
+				!hasAutoClosed &&
+				!hasUserToggled
 			) {
 				const timer = setTimeout(() => {
 					setIsOpen(false);
@@ -165,18 +167,19 @@ export const Reasoning = memo(
 
 				return () => clearTimeout(timer);
 			}
-		}, [isStreaming, isOpen, setIsOpen, hasAutoClosed]);
+		}, [isStreaming, isOpen, setIsOpen, hasAutoClosed, hasUserToggled]);
 
 		const handleOpenChange = useCallback(
 			(newOpen: boolean) => {
+				setHasUserToggled(true);
 				setIsOpen(newOpen);
 			},
 			[setIsOpen]
 		);
 
 		const contextValue = useMemo(
-			() => ({ duration, isOpen, isStreaming, setIsOpen }),
-			[duration, isOpen, isStreaming, setIsOpen]
+			() => ({ duration, isOpen, isStreaming, setIsOpen: handleOpenChange }),
+			[duration, isOpen, isStreaming, handleOpenChange]
 		);
 
 		return (

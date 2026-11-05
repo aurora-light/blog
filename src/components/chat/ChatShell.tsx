@@ -9,6 +9,7 @@ import {
 } from 'ai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { articleRetrievalSchema, waitingStatusSchema } from '@/lib/chat-types';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ChatHeader } from './ChatHeader';
 import { ChatLauncher } from './ChatLauncher';
@@ -20,6 +21,10 @@ import {
 	useDataStream
 } from './data-stream-provider';
 import { getMessageText } from './message-utils';
+import {
+	createSuggestionsClient,
+	type SuggestionsState
+} from './suggestions-request';
 
 const chatTransport = new DefaultChatTransport({
 	api: '/api/chat'
@@ -29,9 +34,20 @@ export function ChatShell() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [input, setInput] = useState('');
 	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const [suggestionsClient] = useState(() => createSuggestionsClient());
+	const [suggestions, setSuggestions] = useState<
+		(SuggestionsState & { messageId: string }) | undefined
+	>();
+	const cancelSuggestions = useCallback(() => {
+		suggestionsClient.cancel();
+		setSuggestions(undefined);
+	}, [suggestionsClient]);
+	useEffect(() => () => suggestionsClient.cancel(), [suggestionsClient]);
 	const { setDataStream, setWaitingStatus } = useDataStream();
 	const handleData = useCallback(
 		(part: DataUIPart<CustomUIDataTypes>) => {
+			// Persistent retrieval events already live in their own message.parts.
+			if (part.type === 'data-article-retrieval') return;
 			setDataStream((current) => [...current, part]);
 
 			if (part.type === 'data-waiting-status') {
@@ -52,7 +68,49 @@ export function ChatShell() {
 	} = useChat<CustomChatMessage>({
 		transport: chatTransport,
 		throttle: 50,
-		onData: handleData
+		onData: handleData,
+		onFinish: ({
+			message,
+			messages: finishedMessages,
+			isAbort,
+			isDisconnect,
+			isError
+		}) => {
+			if (isAbort || isDisconnect || isError) return;
+			const reply = getMessageText(message).trim().slice(0, 8000);
+			const userMessage = [...finishedMessages]
+				.reverse()
+				.find((item) => item.role === 'user');
+			const question = userMessage
+				? getMessageText(userMessage).trim().slice(0, 2000)
+				: '';
+			const part = message.parts.find(
+				(part) => part.type === 'data-article-retrieval'
+			);
+			const retrieval =
+				part && 'data' in part
+					? articleRetrievalSchema.safeParse(part.data)
+					: undefined;
+			if (
+				!reply ||
+				!question ||
+				!retrieval?.success ||
+				!retrieval.data.sources.length
+			)
+				return;
+			void suggestionsClient.load(
+				{
+					reply,
+					question,
+					sourceSlugs: retrieval.data.sources.map((source) => source.slug)
+				},
+				(data) => setSuggestions({ ...data, messageId: message.id })
+			);
+		},
+		dataPartSchemas: {
+			'article-retrieval': articleRetrievalSchema,
+			'waiting-status': waitingStatusSchema
+		}
 	});
 
 	const isGenerating = status === 'submitted' || status === 'streaming';
@@ -68,6 +126,7 @@ export function ChatShell() {
 			const nextMessage = text.trim();
 			if ((!nextMessage && files.length === 0) || isGenerating) return;
 
+			cancelSuggestions();
 			clearError();
 			setInput('');
 			await sendMessage({
@@ -75,7 +134,7 @@ export function ChatShell() {
 				text: nextMessage || '请分析这些图片。'
 			});
 		},
-		[clearError, isGenerating, sendMessage]
+		[clearError, isGenerating, sendMessage, cancelSuggestions]
 	);
 
 	const reuseMessage = useCallback((message: UIMessage) => {
@@ -105,14 +164,22 @@ export function ChatShell() {
 					<DialogTitle className="sr-only">阿轩的 AI 助手</DialogTitle>
 					<ChatHeader
 						hasMessages={messages.length > 0}
-						onClear={() => setMessages([])}
+						onClear={() => {
+							cancelSuggestions();
+							void stop();
+							setMessages([]);
+						}}
 						onClose={() => setIsOpen(false)}
 					/>
 					<ChatMessages
 						messages={messages}
+						suggestions={suggestions}
 						status={status}
 						error={error}
-						onRegenerate={() => void regenerate()}
+						onRegenerate={() => {
+							cancelSuggestions();
+							void regenerate();
+						}}
 						onReuse={reuseMessage}
 						onSubmitSuggestion={(question) => void submitMessage(question)}
 					/>
@@ -122,7 +189,10 @@ export function ChatShell() {
 						isGenerating={isGenerating}
 						onInputChange={setInput}
 						onSubmit={submitMessage}
-						onStop={() => void stop()}
+						onStop={() => {
+							cancelSuggestions();
+							void stop();
+						}}
 					/>
 				</DialogContent>
 			</Dialog>

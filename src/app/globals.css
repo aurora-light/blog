@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '../style/shadcn-trace.css';
 
 @config '../../tailwind.config.ts';
 
@@ -11,6 +12,8 @@
 @custom-variant dark (&:is(.dark, .dark *));
 
 @theme inline {
+	--animate-accordion-down: accordion-down 0.2s ease-out;
+	--animate-accordion-up: accordion-up 0.2s ease-out;
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);

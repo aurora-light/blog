@@ -3,6 +3,7 @@
 import { MessageResponse } from '@/components/ai-elements/message';
 import { Shimmer } from '@/components/ai-elements/shimmer';
 import { sanitizeText } from '@/lib/utils';
+import { articleRetrievalSchema } from '@/lib/chat-types';
 import type { FileUIPart, UIMessage } from 'ai';
 import { Copy, FileText, Pencil } from 'lucide-react';
 import { memo } from 'react';
@@ -11,10 +12,12 @@ import { SparklesIcon } from './icons';
 import { ImageAttachmentPreview } from './ImageAttachmentPreview';
 import { MessageReasoning } from './message-reasoning';
 import { getMessageText } from './message-utils';
+import { ArticleRetrievalTrace } from './ArticleRetrievalTrace';
 
 type ChatMessageProps = {
 	message: UIMessage;
 	isLoading: boolean;
+	hasError?: boolean;
 	onReuse: (message: UIMessage) => void;
 };
 
@@ -71,14 +74,28 @@ function ChatFile({ part }: { part: FileUIPart }) {
 	);
 }
 
-function PureChatMessage({ message, isLoading, onReuse }: ChatMessageProps) {
+function PureChatMessage({
+	message,
+	isLoading,
+	hasError,
+	onReuse
+}: ChatMessageProps) {
 	const isUser = message.role === 'user';
 	const messageText = getMessageText(message);
+	const retrievalPart = message.parts.find(
+		(part) => part.type === 'data-article-retrieval'
+	);
+	const retrieval =
+		!isUser && retrievalPart && 'data' in retrievalPart
+			? articleRetrievalSchema.safeParse(retrievalPart.data)
+			: undefined;
 
 	const attachmentParts = message.parts.filter(
 		(part): part is FileUIPart => part.type === 'file'
 	);
 	const hasVisibleContent = message.parts.some((part) => {
+		if (part.type === 'data-article-retrieval' && retrieval?.success)
+			return true;
 		if (part.type === 'text' || part.type === 'reasoning') {
 			return part.text.trim().length > 0;
 		}
@@ -183,6 +200,18 @@ function PureChatMessage({ message, isLoading, onReuse }: ChatMessageProps) {
 		<>
 			<div className={bubbleClassName}>
 				<div className="space-y-2">
+					{retrieval?.success && (
+						<ArticleRetrievalTrace
+							data={retrieval.data}
+							isLoading={isLoading}
+							hasAnswer={Boolean(messageText.trim())}
+							hasError={hasError}
+						/>
+					)}
+					{retrieval?.success &&
+						isLoading &&
+						!messageText.trim() &&
+						!mergedReasoning.text && <WaitingText />}
 					{attachments}
 					{parts}
 				</div>
