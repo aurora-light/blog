@@ -1,23 +1,18 @@
 'use client';
 import { ClientOnly } from '@/components/ClientOnly';
 import Image from 'next/image';
-import React from 'react';
 import Zoom from 'react-medium-image-zoom';
 import 'react-medium-image-zoom/dist/styles.css';
 
 interface ZoomAbleImageProps {
-	src: string;
-	alt: string;
-	width?: number;
-	height?: number;
+	src?: string;
+	alt?: string;
+	width?: number | string;
+	height?: number | string;
 }
 
-const ZoomAbleImage: React.FC<ZoomAbleImageProps> = ({
-	src,
-	alt,
-	width,
-	height
-}) => {
+const ZoomAbleImage = ({ src, alt, width, height }: ZoomAbleImageProps) => {
+	if (!src) return null;
 	return (
 		// @ts-ignore
 		<ClientOnly>
@@ -25,10 +20,10 @@ const ZoomAbleImage: React.FC<ZoomAbleImageProps> = ({
 				<Image
 					unoptimized
 					src={src}
-					alt={alt}
-					width={width || 800}
-					height={height || 600}
-					layout="responsive"
+					alt={alt ?? ''}
+					width={Number(width) || 800}
+					height={Number(height) || 600}
+					className="h-auto w-full"
 				/>
 			</Zoom>
 		</ClientOnly>

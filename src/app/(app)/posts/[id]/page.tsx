@@ -1,200 +1,202 @@
-import { HourglassIcon, TagIcon, UTurnLeftIcon } from '@/assets';
-import { Container } from '@/components/Container';
+import { ArticleCategoryNav } from '@/components/ArticleCategoryNav';
 import MDXComponents from '@/components/MDXComponents';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Separator } from '@/components/ui/separator';
 import siteMetadata from '@/config/site';
-import { cn } from '@/lib/utils';
-import { allPosts, type Post } from 'contentlayer2/generated';
-import dayjs from 'dayjs';
+import {
+	articleCategories,
+	getArticleCategory,
+	getArticleCategoryHref,
+	getAdjacentArticles
+} from '@/lib/article-categories';
+import { allPosts } from 'contentlayer2/generated';
+import { ArrowLeft, ArrowRight, Clock } from 'lucide-react';
 import { getMDXComponent } from 'next-contentlayer2/hooks';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Tag } from '../TagItem';
 import Toc from '../Toc';
 
-const variantStyles = {
-	primary:
-		'bg-zinc-800 font-semibold text-zinc-100 hover:bg-zinc-700 active:bg-zinc-800 active:text-zinc-100/70 dark:bg-zinc-200 dark:text-black dark:hover:bg-zinc-300 dark:active:bg-zinc-300/70',
-	secondary:
-		'group rounded-full bg-gradient-to-b from-zinc-50/50 to-white/90 px-3 py-2 shadow-lg shadow-zinc-800/5 ring-1 ring-zinc-900/5 backdrop-blur-sm transition dark:from-zinc-900/50 dark:to-zinc-800/90 dark:ring-white/10 dark:hover:ring-white/20'
-};
 interface TypeParams {
 	id: string;
 }
-// 预渲染动态路由时生成所有可能的参数组合。
+const dateFormat = new Intl.DateTimeFormat('zh-CN', {
+	timeZone: 'Asia/Shanghai',
+	year: 'numeric',
+	month: '2-digit',
+	day: '2-digit'
+});
+
 export async function generateStaticParams() {
-	return allPosts.map((post) => ({
-		id: post.slug
-	}));
+	return allPosts.map((post) => ({ id: post.slug }));
 }
-export const generateMetadata = async ({
+export async function generateMetadata({
 	params
 }: {
 	params: Promise<TypeParams>;
-}) => {
+}) {
 	const { id } = await params;
 	const post = allPosts.find((post) => post.slug === id);
-	if (!post) throw new Error(`Post not found for id: ${id}`);
+	if (!post) notFound();
 	const title = post.title;
-	const description =
-		post.description ?? post.title + ' - ' + siteMetadata.authors;
+	const description = post.description ?? `${title} - ${siteMetadata.authors}`;
 	return {
 		title,
 		description,
-		openGraph: {
-			title,
-			description
-		},
-		titter: {
-			title,
-			description
-		},
-		keywords: post.tags?.join(',')
+		openGraph: { title, description },
+		twitter: { title, description },
+		keywords: post.tags?.map(String).join(',')
 	};
-};
+}
 
-const Page = async ({ params }: { params: Promise<TypeParams> }) => {
+export default async function Page({
+	params
+}: {
+	params: Promise<TypeParams>;
+}) {
 	const { id } = await params;
-	let postIndex = 0;
-	const post = allPosts.find((post) => {
-		postIndex++;
-		return post.slug === id;
-	});
-	const sortedPosts = allPosts
-		.sort((a, b) => {
-			// 按照日期降序排序
-			return new Date(b.date).getTime() - new Date(a.date).getTime();
-		})
-		.slice(0, allPosts.length - 1);
+	const post = allPosts.find((post) => post.slug === id);
 	if (!post) notFound();
-	const MDXContent = getMDXComponent(post.body.code);
-	console.log(post.readingTime, 'post');
-	// 找到上一个和下一个帖子
-	const prevPost = sortedPosts[postIndex - 2];
-	const nextPost = sortedPosts[postIndex];
-	const computeTitle = (p: Post) => {
-		if (p.title.length > 20) {
-			return p.title.slice(0, 20) + '...';
-		} else {
-			return p.title;
-		}
-	};
-	return (
-		<Container.Outer className="mt-10 lg:mt-16">
-			<Container.Inner className="!px-0">
-				<div className="w-full md:flex md:justify-between xl:relative gap-1">
-					<aside className="hidden w-[160px] shrink-0 lg:block">
-						<div className="sticky top-2 pt-16">
-							<Toc />
-						</div>
-					</aside>
-					<div className="max-w-4xl md:flex-1 md:shrink-0 ">
-						<Link
-							href="/posts"
-							className={cn(
-								'group mb-8 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md shadow-zinc-800/5 ring-1 ring-zinc-900/5 transition dark:border dark:border-zinc-700/50 dark:bg-zinc-800 dark:ring-0 dark:ring-white/10 dark:hover:border-zinc-700 dark:hover:ring-white/20 lg:absolute lg:-left-5 lg:-mt-2 lg:mb-0 xl:-top-1.5 xl:left-0 xl:mt-0',
-								variantStyles.secondary
-							)}
-							aria-label="返回博客页面"
-						>
-							<UTurnLeftIcon className="h-8 w-8 stroke-zinc-500 transition group-hover:stroke-zinc-700 dark:stroke-zinc-500 dark:group-hover:stroke-zinc-400" />
-						</Link>
-						<article
-							data-postid={post._id}
-							className="rich-text-viewer prose px-4"
-						>
-							<div className="mb-8 text-center">
-								{post.cover && (
-									<AspectRatio
-										ratio={16 / 9}
-										className="bg-muted absolute left-0 top-0 rounded-md overflow-hidden"
-									>
-										<Image
-											src={post.cover}
-											alt={post.title}
-											fill
-											unoptimized
-											className="object-cover"
-										/>
-									</AspectRatio>
-								)}
-								<h1 className="text-3xl font-bold">{post.title}</h1>
-								<div className="flex justify-center rounded-md  h-5 items-center space-x-4 text-sm">
-									<time
-										dateTime={post.date}
-										className="mb-1 text-xs text-gray-600"
-									>
-										{dayjs(post.date).format('YYYY-MM-DD')}
-									</time>
-									<Separator orientation="vertical" />
-									<span className="mb-1 text-xs text-gray-600 flex items-center">
-										<HourglassIcon className="mr-2" />{' '}
-										{Math.ceil(post.readingTime?.minutes)} 分钟
-									</span>
-								</div>
-								<div className="flex w-full justify-center gap-2 mt-2">
-									{post.tags.map((tag) => (
-										<Tag key={tag}>{tag}</Tag>
-									))}
-								</div>
-								{/* 描述渲染 */}
-								{post.description && (
-									<div className="bg-gray-200 dark:bg-gray-600 relative p-4 rounded-md mt-4">
-										<TagIcon className="absolute left-4 top-4" />
-										<p className="text-gray-700 dark:text-gray-300">
-											{post.description}
-										</p>
-									</div>
-								)}
-							</div>
-
-							<div className="js-toc-content">
-								{/* @ts-ignore */}
-								<MDXContent components={MDXComponents} />
-							</div>
-						</article>
-						{/* 上一个，下一个功能 */}
-						<div className="flex px-4 justify-between mt-8">
-							{/* 上一个 */}
-							{prevPost ? (
-								<Link
-									href={`/posts/${prevPost.slug}`}
-									className={cn(
-										'inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm  font-medium text-violet-500  dark:text-violet-300 shadow-xs hover:bg-violet-200 dark:hover:bg-violet-500 focus:outline-hidden focus:ring-2 focus:ring-violet-600 focus:ring-offset-2'
-									)}
-								>
-									{computeTitle(prevPost)}
-								</Link>
-							) : (
-								<span className="leading-10 text-zinc-500 dark:text-zinc-200">
-									已经是第一个了
-								</span>
-							)}
-
-							{/* 下一个 */}
-							{nextPost ? (
-								<Link
-									href={`/posts/${nextPost.slug}`}
-									className={cn(
-										'inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm font-medium text-violet-500 dark:text-violet-300 shadow-xs hover:bg-violet-200  dark:hover:bg-violet-500  focus:outline-hidden focus:ring-2 focus:ring-violet-600 focus:ring-offset-2'
-									)}
-								>
-									{computeTitle(nextPost)}
-								</Link>
-							) : (
-								<span className="leading-10 text-zinc-500 dark:text-zinc-200">
-									没有下一个啦
-								</span>
-							)}
-						</div>
-						{/* 文章还会出现的地址 */}
-					</div>
-				</div>
-			</Container.Inner>
-		</Container.Outer>
+	const publishedPosts = allPosts.filter((post) => post.slug !== 'about');
+	const category = getArticleCategory(post);
+	const categoryLabel = articleCategories.find(
+		(item) => item.id === category
+	)!.label;
+	const counts = Object.fromEntries(
+		articleCategories.map((item) => [
+			item.id,
+			item.id === 'all'
+				? publishedPosts.length
+				: publishedPosts.filter((post) => getArticleCategory(post) === item.id)
+						.length
+		])
 	);
-};
-
-export default Page;
+	const { previous, next } = getAdjacentArticles(publishedPosts, id);
+	const MDXContent = getMDXComponent(post.body.code);
+	const tags = Array.from(new Set(post.tags.map((tag) => String(tag).trim())));
+	return (
+		<div className="mx-auto max-w-[1360px] px-4 pb-12 sm:px-8 lg:px-12">
+			<ArticleCategoryNav active={category} counts={counts} />
+			<article
+				data-postid={post._id}
+				className="mx-auto grid min-w-0 max-w-[1080px] gap-x-12 pb-8 pt-8 lg:grid-cols-[minmax(0,760px)_200px] lg:pt-12 xl:gap-x-20"
+			>
+				<header className="min-w-0 lg:col-start-1">
+					<nav
+						aria-label="当前位置"
+						className="mb-7 flex flex-wrap items-center gap-2 text-[11px] text-zinc-400"
+					>
+						<Link
+							href="/"
+							className="inline-flex items-center gap-1.5 rounded-sm transition-colors hover:text-rose-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400"
+						>
+							<ArrowLeft className="size-3" aria-hidden="true" />
+							全部文章
+						</Link>
+						<span aria-hidden="true">/</span>
+						<Link
+							href={getArticleCategoryHref(category)}
+							className="rounded-sm text-rose-500 hover:text-rose-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 dark:text-rose-400"
+						>
+							{categoryLabel}
+						</Link>
+					</nav>
+					<h1 className="text-pretty break-words font-serif text-[27px] font-semibold leading-[1.5] tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-[34px]">
+						{post.title}
+					</h1>
+					<div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] text-zinc-400">
+						<time dateTime={post.date} className="tabular-nums">
+							{dateFormat.format(new Date(post.date)).replaceAll('/', '.')}
+						</time>
+						<span aria-hidden="true">·</span>
+						<span>{siteMetadata.authorsCN}</span>
+						<span aria-hidden="true">·</span>
+						<span className="inline-flex items-center gap-1.5">
+							<Clock className="size-3" aria-hidden="true" />约{' '}
+							{Math.max(1, Math.ceil(post.readingTime?.minutes ?? 1))} 分钟阅读
+						</span>
+					</div>
+					<div className="mt-4 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-zinc-400">
+						{tags.map((tag) => (
+							<span key={tag}>#{tag}</span>
+						))}
+					</div>
+					{post.description && (
+						<p className="mt-6 border-l-2 border-rose-200 pl-4 text-sm leading-7 text-zinc-500 dark:border-rose-400/30 dark:text-zinc-400">
+							{post.description}
+						</p>
+					)}
+					{post.cover && (
+						<div className="relative mt-8 aspect-[16/8] overflow-hidden rounded-xl">
+							<Image
+								src={post.cover}
+								alt=""
+								fill
+								unoptimized
+								sizes="(max-width: 1023px) 100vw, 760px"
+								className="object-cover"
+							/>
+						</div>
+					)}
+					<div className="mb-8 mt-8 border-t border-zinc-200/80 dark:border-white/10" />
+				</header>
+				<aside
+					aria-label="文章目录"
+					className="min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-3"
+				>
+					<div className="lg:sticky lg:top-44">
+						<Toc key={post.slug} />
+					</div>
+				</aside>
+				<div className="rich-text-viewer article-body js-toc-content min-w-0 lg:col-start-1">
+					<MDXContent components={MDXComponents} />
+				</div>
+				<footer className="mt-14 min-w-0 border-t border-zinc-200 pt-6 dark:border-white/10 lg:col-start-1">
+					<p className="mb-4 text-[10px] tracking-[0.16em] text-zinc-400">
+						继续阅读
+					</p>
+					<nav aria-label="相邻文章" className="grid gap-4 sm:grid-cols-2">
+						{previous ? (
+							<Link
+								rel="prev"
+								href={`/posts/${encodeURIComponent(previous.slug)}`}
+								className="group min-w-0 rounded-xl border border-zinc-200/80 px-4 py-4 transition-colors hover:border-rose-200 hover:bg-white/70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 dark:border-white/10 dark:hover:border-rose-400/30 dark:hover:bg-white/[0.03]"
+							>
+								<span className="mb-2 inline-flex items-center gap-2 text-[10px] text-zinc-400">
+									<ArrowLeft className="size-3" aria-hidden="true" />
+									上一篇
+								</span>
+								<span className="line-clamp-2 block text-sm leading-6 text-zinc-700 transition-colors group-hover:text-rose-500 dark:text-zinc-300">
+									{previous.title}
+								</span>
+							</Link>
+						) : (
+							<div className="rounded-xl border border-dashed border-zinc-200/80 px-4 py-4 dark:border-white/10">
+								<p className="text-[10px] text-zinc-400">上一篇</p>
+								<p className="mt-2 text-sm text-zinc-500">已经是最新的一篇</p>
+							</div>
+						)}
+						{next ? (
+							<Link
+								rel="next"
+								href={`/posts/${encodeURIComponent(next.slug)}`}
+								className="group min-w-0 rounded-xl border border-zinc-200/80 px-4 py-4 transition-colors hover:border-rose-200 hover:bg-white/70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 dark:border-white/10 dark:hover:border-rose-400/30 dark:hover:bg-white/[0.03]"
+							>
+								<span className="mb-2 inline-flex items-center gap-2 text-[10px] text-zinc-400">
+									下一篇
+									<ArrowRight className="size-3" aria-hidden="true" />
+								</span>
+								<span className="line-clamp-2 block text-sm leading-6 text-zinc-700 transition-colors group-hover:text-rose-500 dark:text-zinc-300">
+									{next.title}
+								</span>
+							</Link>
+						) : (
+							<div className="rounded-xl border border-dashed border-zinc-200/80 px-4 py-4 dark:border-white/10">
+								<p className="text-[10px] text-zinc-400">下一篇</p>
+								<p className="mt-2 text-sm text-zinc-500">已经读到最后一篇</p>
+							</div>
+						)}
+					</nav>
+				</footer>
+			</article>
+		</div>
+	);
+}

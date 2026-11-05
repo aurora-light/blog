@@ -1,0 +1,209 @@
+.article-body {
+	color: #52525b;
+	font-size: 15px;
+	line-height: 1.95;
+	overflow-wrap: anywhere;
+}
+.article-body > :first-child {
+	margin-top: 0;
+}
+.article-body.rich-text-viewer :is(h1, h2, h3, h4, h5, h6) {
+	color: #27272a;
+	font-family: ui-serif, 'Songti SC', 'STSong', serif;
+	font-weight: 600;
+	line-height: 1.5;
+	scroll-margin-top: 12rem;
+}
+.article-body h1 {
+	margin: 2.5rem 0 1rem;
+	font-size: 1.65rem;
+}
+.article-body h2 {
+	margin: 2.5rem 0 1rem;
+	font-size: 1.4rem;
+}
+.article-body h3 {
+	margin: 2rem 0 0.8rem;
+	font-size: 1.15rem;
+}
+.article-body :is(h4, h5, h6) {
+	margin: 1.5rem 0 0.75rem;
+	font-size: 1rem;
+}
+.article-body :is(p, ul, ol, blockquote, pre, table, figure, details) {
+	margin: 1.25rem 0;
+}
+.article-body :is(ul, ol) {
+	padding-left: 1.5rem;
+}
+.article-body ul {
+	list-style: disc;
+}
+.article-body ol {
+	list-style: decimal;
+}
+.article-body li {
+	margin: 0.4rem 0;
+	padding-left: 0.2rem;
+}
+.article-body li::marker {
+	color: #a1a1aa;
+}
+.article-body li > :is(ul, ol, p) {
+	margin: 0.5rem 0;
+}
+.article-body strong {
+	color: #27272a;
+	font-weight: 600;
+}
+.article-body a {
+	color: #e11d48;
+	text-decoration: underline;
+	text-decoration-color: #fda4af80;
+	text-underline-offset: 4px;
+	transition: color 150ms;
+}
+.article-body a:hover {
+	color: #be123c;
+	text-decoration-color: currentColor;
+}
+.article-body :is(h1, h2, h3, h4, h5, h6) a {
+	color: inherit;
+	text-decoration: none;
+}
+.article-body :is(h1, h2, h3, h4, h5, h6) a:hover {
+	color: #e11d48;
+}
+.article-body a:focus-visible {
+	outline: 2px solid #fb7185;
+	outline-offset: 4px;
+	border-radius: 2px;
+}
+.article-body blockquote {
+	border-left: 2px solid #fda4af;
+	padding: 0.2rem 0 0.2rem 1.1rem;
+	color: #71717a;
+}
+.article-body blockquote p {
+	margin: 0.5rem 0;
+}
+.article-body pre {
+	max-width: 100%;
+	overflow-x: auto;
+	border: 1px solid #e4e4e7;
+	border-radius: 10px;
+	padding: 1.1rem 1.25rem;
+	background: #f1f1ed;
+	font-size: 12px;
+	line-height: 1.85;
+	white-space: pre;
+	overflow-wrap: normal;
+}
+.article-body code {
+	border-radius: 4px;
+	padding: 0.15rem 0.35rem;
+	background: #eeeae7;
+	color: #be123c;
+	font-size: 0.85em;
+}
+.article-body pre code {
+	border: 0;
+	border-radius: 0;
+	padding: 0;
+	background: transparent;
+	color: inherit;
+	font-size: inherit;
+}
+.article-body :is(code, kbd, pre) {
+	font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.article-body table {
+	display: block;
+	max-width: 100%;
+	overflow-x: auto;
+	border-collapse: collapse;
+	font-size: 13px;
+	line-height: 1.8;
+}
+.article-body :is(th, td) {
+	border: 1px solid #e4e4e7;
+	padding: 0.65rem 0.9rem;
+	vertical-align: top;
+}
+.article-body th {
+	background: #f1f1ed;
+	color: #3f3f46;
+	font-weight: 600;
+	text-align: left;
+}
+.article-body :is(img, video) {
+	max-width: 100%;
+	height: auto;
+	border-radius: 10px;
+}
+.article-body :is(iframe, svg) {
+	max-width: 100%;
+}
+.article-body hr {
+	margin: 2.5rem 0;
+	border: 0;
+	border-top: 1px solid #e4e4e7;
+}
+.article-body figcaption {
+	margin-top: 0.6rem;
+	text-align: center;
+	color: #a1a1aa;
+	font-size: 12px;
+}
+.article-body summary {
+	cursor: pointer;
+	color: #3f3f46;
+}
+.article-body kbd {
+	border: 1px solid #d4d4d8;
+	border-radius: 4px;
+	padding: 2px 5px;
+	font-size: 0.8em;
+}
+.dark .article-body {
+	color: #a1a1aa;
+}
+.dark .article-body :is(h1, h2, h3, h4, h5, h6, strong, summary) {
+	color: #e4e4e7;
+}
+.dark .article-body a {
+	color: #fb7185;
+	text-decoration-color: #fb718540;
+}
+.dark .article-body a:hover {
+	color: #fda4af;
+}
+.dark .article-body :is(h1, h2, h3, h4, h5, h6) a {
+	color: inherit;
+}
+.dark .article-body code {
+	background: #27272a;
+	color: #fda4af;
+}
+.dark .article-body pre {
+	border-color: #ffffff14;
+	background: #151518;
+	color: #d4d4d8;
+}
+.dark .article-body pre code {
+	background: transparent;
+	color: inherit;
+}
+.dark .article-body :is(th, td, hr, kbd) {
+	border-color: #ffffff1a;
+}
+.dark .article-body th {
+	background: #18181b;
+	color: #d4d4d8;
+}
+@media (min-width: 640px) {
+	.article-body {
+		font-size: 16px;
+		line-height: 2;
+	}
+}

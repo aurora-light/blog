@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../style/shadcn-trace.css';
+@import '../style/article.css';
 
 @config '../../tailwind.config.ts';
 
@@ -10,6 +11,10 @@
 @source '../../node_modules/@streamdown/mermaid/dist';
 
 @custom-variant dark (&:is(.dark, .dark *));
+
+.rich-text-viewer :is(h1, h2, h3, h4, h5, h6) {
+	scroll-margin-top: 6rem;
+}
 
 @theme inline {
 	--animate-accordion-down: accordion-down 0.2s ease-out;

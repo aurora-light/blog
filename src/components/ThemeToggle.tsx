@@ -1,93 +1,41 @@
 'use client';
-import { Switch } from '@/components/ui/switch';
-import 'client-only';
-import { motion } from 'motion/react';
+
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useEffect, useRef, useState } from 'react';
-import useThemeToggleAnimation from '../hooks/useThemeToggleAnimation';
+import { useEffect } from 'react';
 
 export default function ThemeToggle() {
-	const eventRef = useRef<AnyIfEmpty>(null);
-	const [mounted, setMounted] = useState(false);
-	const { theme, setTheme }: AnyIfEmpty = useTheme();
-	const toggleRef = useRef<AnyIfEmpty>(null);
-	const { toggleDarkMode } = useThemeToggleAnimation({
-		domRef: toggleRef,
-		isDarkMode: theme === 'dark',
-		onThemeChange: (t) => {
-			setTheme(t);
-		}
-	});
+	const { resolvedTheme, setTheme } = useTheme();
 	useEffect(() => {
+		if (!resolvedTheme) return;
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.href =
-			theme === 'dark'
-				? '/style/prism-gruvbox-light.css'
-				: '/style/prism-coldark-dark.css';
+			resolvedTheme === 'dark'
+				? '/style/prism-coldark-dark.css'
+				: '/style/prism-gruvbox-light.css';
 		document.head.appendChild(link);
-
-		// 清理函数，在组件卸载或主题变化时移除之前的 CSS
-		return () => {
-			document.head.removeChild(link);
-		};
-	}, [theme]);
-	useEffect(() => {
-		setMounted(true);
-	}, []);
-	// useEffect(() => {
-	// 	if (!mounted || !toggleRef.current) return;
-
-	// 	const handleClick = (e: AnyIfEmpty) => {
-	// 		themeSwitcher.toggleTheme(e);
-	// 		setTheme(theme === 'dark' ? 'light' : 'dark');
-	// 	};
-
-	// 	toggleRef.current.addEventListener('click', handleClick);
-
-	// 	return () => {
-	// 		if (toggleRef.current) {
-	// 			toggleRef.current.removeEventListener('click', handleClick);
-	// 		}
-	// 	};
-	// }, [mounted, theme, setTheme]);
-	if (!mounted) {
-		return null;
-	}
-	const handleThemeChange = async () => {
-		await toggleDarkMode();
+		return () => link.remove();
+	}, [resolvedTheme]);
+	const toggle = () => {
+		const update = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+		if (
+			typeof document.startViewTransition === 'function' &&
+			!window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		) {
+			document.startViewTransition(update);
+		} else update();
 	};
 	return (
-		<div className="flex items-center space-x-2">
-			<Switch
-				ref={toggleRef}
-				id="theme-toggle"
-				onClick={(event) => (eventRef.current = event)}
-				checked={theme === 'dark'}
-				onCheckedChange={handleThemeChange}
-				className="w-16 h-8 px-1"
-			>
-				<motion.div
-					initial={{ x: -20, opacity: 0 }}
-					animate={{ x: 0, opacity: 1 }}
-					exit={{ x: 20, opacity: 0 }}
-					layout
-					transition={spring}
-				>
-					{theme === 'dark' ? (
-						<Moon className="h-5 w-5 ml-[2px] text-violet-400" />
-					) : (
-						<Sun className="h-5 w-5 text-violet-500" />
-					)}
-				</motion.div>
-			</Switch>
-		</div>
+		<button
+			type="button"
+			onClick={toggle}
+			aria-label="切换明暗主题"
+			title="切换明暗主题"
+			className="grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-violet-400 dark:hover:bg-white/10 dark:hover:text-white"
+		>
+			<Sun className="size-4 dark:hidden" aria-hidden="true" />
+			<Moon className="hidden size-4 dark:block" aria-hidden="true" />
+		</button>
 	);
 }
-
-const spring = {
-	type: 'spring' as const,
-	stiffness: 900,
-	damping: 80
-};

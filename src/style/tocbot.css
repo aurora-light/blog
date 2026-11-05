@@ -1,38 +1,45 @@
-.toc-list {
-	list-style-type: none;
+.article-toc .toc-list {
+	list-style: none;
+	margin: 0;
 	padding-left: 0;
 }
-
-.toc-list-item {
-	font-size: 14px;
-	font-weight: 500;
-	line-height: 18px;
-	transition: colors 0.3s;
+.article-toc .toc-list-item {
+	font-size: 12px;
+	line-height: 1.7;
 }
-
-.toc-link {
+.article-toc .toc-link {
 	display: block;
-	width: 100%;
-	color: #71717a; /* zinc-500 */
-	margin-bottom: 8px;
+	border-left: 1px solid #e4e4e7;
+	padding: 5px 0 5px 14px;
+	color: #a1a1aa;
+	text-decoration: none;
+	transition:
+		color 150ms,
+		border-color 150ms;
 }
-
-.toc-link:hover {
-	color: #3f3f46; /* zinc-700 */
+.article-toc .toc-link:hover {
+	color: #52525b;
 }
-
-.dark .toc-link:hover {
-	color: #a1a1aa; /* dark:zinc-400 */
+.article-toc .toc-link:focus-visible {
+	outline: 2px solid #fb7185;
+	outline-offset: -2px;
+	border-radius: 3px;
 }
-
-.is-active-li > .toc-link {
-	color: #a855f7; /* zinc-900 */
+.article-toc .is-active-li > .toc-link {
+	border-color: #fb7185;
+	color: #f43f5e;
 }
-
-.dark .is-active-li > .toc-link {
-	color: #af88fa; /* dark:zinc-200 */
+.article-toc .toc-list .toc-list {
+	padding-left: 10px;
 }
-
-.toc-list .toc-list {
-	padding-left: 1rem;
+.dark .article-toc .toc-link {
+	border-color: #27272a;
+	color: #71717a;
+}
+.dark .article-toc .toc-link:hover {
+	color: #d4d4d8;
+}
+.dark .article-toc .is-active-li > .toc-link {
+	border-color: #fb7185;
+	color: #fb7185;
 }

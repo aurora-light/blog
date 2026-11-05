@@ -109,9 +109,7 @@ export const baseSiteConfig: SiteConfig = {
 		apple: '/logo.png'
 	},
 	navigationItems: [
-		{ href: '/', text: '首页' },
-		{ href: '/posts', text: '博客' },
-		{ href: '/projects', text: '项目' },
+		{ href: '/posts', text: '文章' },
 		// { href: '/guestbook', text: '留言墙' },
 		// { href: '/ama', text: 'AMA 咨询' },
 		{ href: '/about', text: '关于我' }
@@ -130,7 +128,7 @@ export const baseSiteConfig: SiteConfig = {
 			}
 		]
 	},
-	footerItems: [{ href: '/', text: '首页' }],
+	footerItems: [],
 	locale: 'zh-CN',
 	siteHostList: ['lesliecode.cn', 'dino.cn', 'lucky-snail.vercel.app']
 };
