@@ -28,8 +28,11 @@
 		"upload:image": "node ./scripts/upload-blog-image.mjs",
 		"generate-rss": "node ./scripts/generate-rss.js",
 		"generate-article-index": "node ./scripts/build-article-index.mjs",
+		"test:rag": "pnpm build:search && node --test tests/rag.test.mjs",
 		"serve": "serve -s out",
-		"build:search": "pnpm --filter @leslie/search-core build"
+		"build:search": "pnpm --filter @leslie/search-core build",
+		"test:search": "pnpm --filter @leslie/search-core test",
+		"test:home": "node --test tests/home.test.mjs"
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^4.0.104",
