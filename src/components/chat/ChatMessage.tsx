@@ -6,9 +6,9 @@ import { sanitizeText } from '@/lib/utils';
 import { articleRetrievalSchema } from '@/lib/chat-types';
 import type { FileUIPart, UIMessage } from 'ai';
 import { Copy, FileText, Pencil } from 'lucide-react';
+import Image from 'next/image';
 import { memo } from 'react';
 import { toast } from 'sonner';
-import { SparklesIcon } from './icons';
 import { ImageAttachmentPreview } from './ImageAttachmentPreview';
 import { MessageReasoning } from './message-reasoning';
 import { getMessageText } from './message-utils';
@@ -41,6 +41,19 @@ function WaitingText() {
 		<Shimmer as="span" className="text-xs" duration={1.8} spread={1.5}>
 			正在思考…
 		</Shimmer>
+	);
+}
+
+function AssistantAvatar() {
+	return (
+		<Image
+			src="/logo.webp"
+			alt=""
+			width={28}
+			height={28}
+			unoptimized
+			className="size-7 shrink-0 rounded-lg object-cover"
+		/>
 	);
 }
 
@@ -105,7 +118,7 @@ function PureChatMessage({
 	const isThinking = !isUser && isLoading && !hasVisibleContent;
 	const bubbleClassName = isUser
 		? 'max-w-[84%] rounded-[20px] rounded-br-md bg-zinc-900 px-4 py-2.5 text-sm leading-6 text-white shadow-xs dark:bg-zinc-100 dark:text-zinc-900'
-		: 'max-w-[88%] rounded-[20px] rounded-bl-md border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm leading-6 text-zinc-700 dark:border-white/10 dark:bg-white/[0.05] dark:text-zinc-200';
+		: 'max-w-full rounded-[20px] rounded-bl-md border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm leading-6 text-zinc-700 dark:border-white/10 dark:bg-white/[0.05] dark:text-zinc-200';
 
 	const attachments = attachmentParts.length ? (
 		<div className="flex flex-wrap gap-2">
@@ -220,15 +233,12 @@ function PureChatMessage({
 		</>
 	);
 
-	return (
-		<div
-			className={
-				isUser
-					? 'group/message flex flex-col items-end'
-					: 'group/message flex flex-col items-start'
-			}
-		>
-			{content}
+	return isUser ? (
+		<div className="group/message flex flex-col items-end">{content}</div>
+	) : (
+		<div className="group/message flex items-start gap-2">
+			<AssistantAvatar />
+			<div className="flex min-w-0 flex-1 flex-col items-start">{content}</div>
 		</div>
 	);
 }
@@ -241,13 +251,8 @@ export const ThinkingMessage = () => (
 		data-role="assistant"
 		data-testid="message-assistant-loading"
 	>
-		<div className="flex items-start gap-3">
-			<div className="flex h-[21.45px] shrink-0 items-center">
-				<div className="flex size-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground ring-1 ring-border/50">
-					<SparklesIcon size={13} />
-				</div>
-			</div>
-
+		<div className="flex items-center gap-2">
+			<AssistantAvatar />
 			<WaitingText />
 		</div>
 	</div>

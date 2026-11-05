@@ -103,11 +103,6 @@ export const baseSiteConfig: SiteConfig = {
 		{ media: '(prefers-color-scheme: light)', color: '#fafafa' }
 	],
 	defaultNextTheme: 'system', // next-theme option: system | dark | light
-	icons: {
-		icon: '/favicon.ico',
-		shortcut: '/logo.png',
-		apple: '/logo.png'
-	},
 	navigationItems: [
 		{ href: '/posts', text: '文章' },
 		// { href: '/guestbook', text: '留言墙' },
