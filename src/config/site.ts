@@ -6,9 +6,9 @@ const url = new URL(
 		: 'http://localhost:3000'
 );
 export const baseSiteConfig: SiteConfig = {
-	name: 'blog | 前端 | 开发者',
+	name: 'blog | 全栈 | 开发者',
 	description:
-		'我是睡不醒的啊轩，一名在探索转型的开发工程师。我希望自己能和优秀的人一起共事，探索人工智能（AI），希望借此做一些自己东西。希望自己能有一个开源的项目，不虚此行。好困，希望能多睡会儿。',
+		'我是睡不醒的啊轩，一名探索全栈开发的工程师。我希望自己能和优秀的人一起共事，探索人工智能（AI），希望借此做一些自己东西。希望自己能有一个开源的项目，不虚此行。好困，希望能多睡会儿。',
 	url: url.href, //'https://dino.cn/',
 	// 网站预览图
 	ogImage: url.origin + '/og.png',
@@ -17,7 +17,7 @@ export const baseSiteConfig: SiteConfig = {
 	keywords: [
 		'睡不醒的啊轩',
 		'blog',
-		'前端',
+		'全栈',
 		'开发者',
 		'AI',
 		'编程',
