@@ -20,6 +20,16 @@ bun dev
 
 本项目使用 [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) 来自动优化和加载 Inter，这是一种自定义的 Google 字体。
 
+## 上传博客图片
+
+安装 [ossutil 2.x](https://www.alibabacloud.com/help/en/oss/developer-reference/ossutil-overview/)，然后在终端运行 `ossutil config`。填入对 `lesliecode-hk/posts/blog/` 有上传权限的 RAM AccessKey，地域填 `cn-hongkong`。凭证保存在本机的 ossutil 配置中。
+
+```bash
+pnpm upload:image "/path/to/cover.png"
+```
+
+命令会生成 1 MB 以内的 WebP，上传到 `lesliecode-hk/posts/blog/`，并为新对象设置公共读。匿名请求验证通过后，终端会输出图片 URL，可填到文章的 `cover` 或用于正文。若 OSS 阻止公共访问，需先处理相应的访问策略。
+
 ## 特性
 
 - 背景使用了 https://bg.ibelick.com/

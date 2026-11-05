@@ -25,6 +25,7 @@
 		"lint": "eslint --ext .ts,.js,.jsx,.tsx --fix . ",
 		"lint-staged": "lint-staged",
 		"sync-post": "node ./scripts/sync-post.js",
+		"upload:image": "node ./scripts/upload-blog-image.mjs",
 		"generate-rss": "node ./scripts/generate-rss.js",
 		"generate-article-index": "node ./scripts/build-article-index.mjs",
 		"serve": "serve -s out",
