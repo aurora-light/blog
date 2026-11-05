@@ -16,9 +16,9 @@
 	"scripts": {
 		"prepare": "husky install",
 		"pre-commit": "lint-staged",
-		"predev": "pnpm generate-rss",
+		"predev": "pnpm build:search && pnpm generate-rss && pnpm generate-article-index",
 		"dev": "next dev --webpack",
-		"prebuild": "pnpm generate-rss",
+		"prebuild": "pnpm build:search && pnpm generate-rss && pnpm generate-article-index",
 		"build": "next build --webpack",
 		"start": "next start -p 3003",
 		"start:static": "serve -s out -l 3003",
@@ -26,7 +26,9 @@
 		"lint-staged": "lint-staged",
 		"sync-post": "node ./scripts/sync-post.js",
 		"generate-rss": "node ./scripts/generate-rss.js",
-		"serve": "serve -s out"
+		"generate-article-index": "node ./scripts/build-article-index.mjs",
+		"serve": "serve -s out",
+		"build:search": "pnpm --filter @leslie/search-core build"
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^4.0.104",
@@ -88,7 +90,8 @@
 		"tailwind-merge": "^3.7.0",
 		"tailwindcss-animate": "^1.0.7",
 		"tocbot": "^4.36.8",
-		"zod": "^4.6.7"
+		"zod": "^4.6.7",
+		"@leslie/search-core": "workspace:*"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^21.2.4",
@@ -109,6 +112,7 @@
 		"globby": "^16.2.4",
 		"husky": "^9.1.7",
 		"lint-staged": "^17.6.0",
+		"pdfjs-dist": "6.3.289",
 		"postcss": "^8.5.32",
 		"prettier": "^3.9.10",
 		"remark-rehype": "^11.1.2",

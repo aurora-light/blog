@@ -17,6 +17,9 @@ importers:
       '@emotion/is-prop-valid':
         specifier: ^1.4.0
         version: 1.4.0
+      '@leslie/search-core':
+        specifier: workspace:*
+        version: link:packages/search-core
       '@radix-ui/react-aspect-ratio':
         specifier: ^1.2.0
         version: 1.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -243,6 +246,9 @@ importers:
       lint-staged:
         specifier: ^17.6.0
         version: 17.6.0
+      pdfjs-dist:
+        specifier: 6.3.289
+        version: 6.3.289
       postcss:
         specifier: ^8.5.32
         version: 8.5.32
@@ -261,6 +267,12 @@ importers:
       unified:
         specifier: ^11.0.5
         version: 11.0.5
+
+  packages/search-core:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
 

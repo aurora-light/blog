@@ -22,6 +22,7 @@ export default defineConfig([
 		'.next/**',
 		'next-env.d.ts',
 		'node_modules/**',
+		'packages/*/dist/**',
 		'public/**'
 	])
 ]);

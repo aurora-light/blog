@@ -1,0 +1,46 @@
+{
+	"name": "@leslie/search-core",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Configurable keyword search for articles and document chunks",
+	"type": "module",
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./retrieval": {
+			"types": "./dist/retrieval.d.ts",
+			"import": "./dist/retrieval.js",
+			"default": "./dist/retrieval.js"
+		},
+		"./rag": {
+			"types": "./dist/rag.d.ts",
+			"import": "./dist/rag.js",
+			"default": "./dist/rag.js"
+		},
+		"./prompts": {
+			"types": "./dist/lib/prompts/index.d.ts",
+			"import": "./dist/lib/prompts/index.js",
+			"default": "./dist/lib/prompts/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"test": "pnpm build && node --test tests/*.test.mjs",
+		"prepack": "pnpm build"
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"devDependencies": {
+		"typescript": "^5.9.3"
+	}
+}
