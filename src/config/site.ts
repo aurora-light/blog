@@ -104,7 +104,7 @@ export const baseSiteConfig: SiteConfig = {
 	],
 	defaultNextTheme: 'system', // next-theme option: system | dark | light
 	navigationItems: [
-		{ href: '/posts', text: '文章' },
+		// { href: '/posts', text: '文章' },
 		// { href: '/guestbook', text: '留言墙' },
 		// { href: '/ama', text: 'AMA 咨询' },
 		{ href: '/about', text: '关于我' }
