@@ -1,0 +1,54 @@
+---
+title: NestJS 实践笔记：用 Yjs 和 PostgreSQL 实现协作编辑
+description: 沿着 WebSocket 连接、Yjs 增量同步和 PostgreSQL 持久化，理解协作文档后端如何恢复编辑状态。
+date: 2026-06-13T00:00:00+08:00
+slug: nestjs-yjs-postgresql-collaboration
+author: aurora-light：https://github.com/auroralight
+tags: ['NestJS', 'Node.js', 'Yjs', 'WebSocket', 'PostgreSQL']
+---
+
+读这个协作文档后端时，我先去 Gateway 里找正文更新是怎么进来的。那里确实有个叫 `doc-update` 的订阅方法，但它只记录并返回收到的参数。实际同步走的是另一条线，从 `handleConnection` 进去，连接建立后就交给了 Yjs 的协议处理函数。
+
+## Gateway 后面还有一层
+
+项目用 NestJS 的 `WsAdapter` 接 WebSocket。协议处理函数再从请求路径取房间键，用它找到进程里的 `Y.Doc`。同一个键下的连接共享这份文档，之后的正文更新以二进制消息交换。 [NestJS WebSocket Adapter 文档](https://docs.nestjs.com/websockets/adapter)
+
+```text
+编辑器中的 Y.Doc
+    ↕ WebSocket 二进制消息
+NestJS Gateway → 按文档键找到服务端 Y.Doc
+                         ↕
+                PostgreSQL 中的更新记录
+```
+
+这里的页面 ID 容易和房间键混在一起。项目查文档关联图时，会先取一份共享的 `Y.Doc`，再按页面 ID 读里面的节点。顺着这段查询往回看，就能理解为什么两种 ID 要分别找。
+
+## 两边都改了，怎么合回来？
+
+可以先把 WebSocket 放一边，只用两个 `Y.Doc` 模拟断网后各自编辑。两边收到对方的更新后，内容会收敛到同一份，两次插入都能保留下来。 [Yjs 文档更新说明](https://docs.yjs.dev/api/document-updates)
+
+```ts
+import * as Y from 'yjs';
+
+const a = new Y.Doc();
+const b = new Y.Doc();
+a.getText('body').insert(0, '来自 A 的一段文字。');
+b.getText('body').insert(0, '来自 B 的一个链接。');
+
+const updateA = Y.encodeStateAsUpdate(a);
+const updateB = Y.encodeStateAsUpdate(b);
+Y.applyUpdate(a, updateB);
+Y.applyUpdate(b, updateA);
+
+console.log(a.getText('body').toString() === b.getText('body').toString());
+```
+
+上面直接交换了完整状态，方便看懂。项目在连接建立时会先发同步消息，用状态向量找出对端缺少的更新。光标、选区和在线成员则走 Awareness。有人断开，清掉他在房间里的在线状态就行，没必要把这些临时数据放进正文的恢复流程。 [Yjs Awareness 文档](https://docs.yjs.dev/api/about-awareness)
+
+## 两个窗口都关了以后
+
+这个项目用 `y-postgresql` 保存二进制更新。一个房间第一次进入内存时，持久化层用 `getYDoc(roomKey)` 读出之前的状态，再合并进正在用的文档。之后有新的文档更新，监听器就调用 `storeUpdate(roomKey, update)`。标题和所有者还是从普通页面表查。 [y-postgresql API](https://github.com/MaxNoetzold/y-postgresql)
+
+看代码时，我在 `writeState` 上留了个记号。名字像是「关闭前把最后一份状态写进去」，但这里的回调直接完成，平时的更新才在监听器里异步写库。所以只用两个窗口看能不能同步，测不到写入失败或者进程突然退出的情况。下次验证这段，我会分两步做：先断开一端再重连看能不能合并，然后关闭连接、重启后端，看刚写的正文还能不能回来。
+
+还有两点容易漏看。首次读取历史状态是异步的，首轮同步可能赶在它之前。Gateway 的鉴权也留在注释里，知道房间键就能走到同步入口。要把这套流程放到公网，至少得等文档加载完成，并在开始同步前校验连接者对目标房间的权限。多实例部署时还要想清楚连接落在哪儿，因为进程内的房间表只知道本实例的连接，共用一个 PostgreSQL 不会自动广播更新。

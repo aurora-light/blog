@@ -1,0 +1,90 @@
+---
+title: NestJS 实践笔记：用 Zod Pipe 校验文档接口
+description: 从创建和更新文档的请求出发，理解 NestJS Guard、Zod Pipe 和数据库查询各自负责什么。
+date: 2026-04-18T00:00:00+08:00
+slug: nestjs-zod-document-api
+author: aurora-light：https://github.com/auroralight
+tags: ['NestJS', 'Node.js', 'Zod', 'TypeORM']
+---
+
+翻到文档模块的控制器时，我先留意到一个细节。创建和删除都传了 Zod schema，夹在中间的更新接口却直接收了一个 `body`。这几个方法都在同一个 JWT 守卫下面，乍看差不多，往 Service 里追一层才看出区别。
+
+## 给请求体加一道检查
+
+给 `@Body()` 标上 TypeScript 类型，写业务代码时有提示。真有客户端传一个数字标题，类型本身拦不住。项目里比较方便的做法是先写 schema，再用 `z.infer` 推导 DTO。用创建笔记举个小例子：
+
+```ts
+import { z } from 'zod';
+
+export const createNote = z.object({
+  title: z.string().trim().min(1).max(100),
+  icon: z.string().max(16).optional()
+}).strict();
+
+export type CreateNoteInput = z.infer<typeof createNote>;
+```
+
+我把 `trim()` 放在长度检查前面，免得几个空格也能当标题。这里还加了 `strict()`，多传一个 `ownerId` 会直接报错。如果接口要兼容旧客户端传来的额外字段，也可以让 Zod 按默认行为剔除它们。
+
+Pipe 的代码很短。校验失败就抛 400，成功就把 Zod 解析出来的值交给控制器。原项目在方法上绑定 Pipe，这里写在 `@Body()` 里，范围刚好是这个参数。 [NestJS Pipes 文档](https://docs.nestjs.com/pipes)
+
+```ts
+import { BadRequestException, type PipeTransform } from '@nestjs/common';
+import type { ZodType } from 'zod';
+
+export class SchemaPipe<T> implements PipeTransform<unknown, T> {
+  constructor(private readonly schema: ZodType<T>) {}
+
+  transform(input: unknown): T {
+    const result = this.schema.safeParse(input);
+
+    if (!result.success) {
+      throw new BadRequestException({
+        message: '请求参数不合法',
+        fields: result.error.issues.map(issue => ({
+          path: issue.path.join('.'),
+          code: issue.code
+        }))
+      });
+    }
+
+    return result.data;
+  }
+}
+```
+
+这里容易顺手写成 `return input`。这样校验虽然跑过了，进控制器的标题两边还是有空格。既然用了转换规则，就把解析后的 `result.data` 传下去。
+
+## 登录之后，能改哪份文档？
+
+项目里用户 ID 从 `req.user` 取。客户端提交标题和图标就够了，创建时由服务端补上所有者。下面这段假设 JWT 策略已经注册，认证成功后会在 `request.user` 上放入用户 ID。
+
+```ts
+@Post()
+@UseGuards(AuthGuard('jwt'))
+create(
+  @Body(new SchemaPipe(createNote)) input: CreateNoteInput,
+  @Req() request: { user: { id: number } }
+) {
+  return this.notes.create({
+    title: input.title,
+    icon: input.icon,
+    ownerId: request.user.id
+  });
+}
+```
+
+回到开头那个更新接口。读取和删除都带了用户条件，更新只按文档 ID 写入。给更新接口补了 schema，也只能保证标题是合法字符串。只允许所有者编辑时，还得把当前用户放进更新条件里。
+
+```ts
+const result = await notes.update(
+  { id: noteId, ownerId: currentUserId },
+  { title: input.title }
+);
+
+if (result.affected === 0) {
+  throw new NotFoundException('未找到可编辑的笔记');
+}
+```
+
+示例里的 `ownerId` 是实体上显式映射的字段。匹配不到记录就抛 404，这样调用方也不会知道别人的文档是否存在。留个回归用例就能区分这两处检查：登录后拿一个合法的标题去更新别人的文档，请求应该能过 Pipe，但最终写不进去。
