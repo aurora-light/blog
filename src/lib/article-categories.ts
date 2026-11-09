@@ -57,6 +57,11 @@ export interface HomeArticle {
 	category: ArticleCategory;
 }
 
+export type SearchArticle = Pick<
+	HomeArticle,
+	'slug' | 'title' | 'cover' | 'category'
+> & { url: string };
+
 export function filterHomeArticles(
 	articles: readonly HomeArticle[],
 	category: ArticleCategoryFilter,

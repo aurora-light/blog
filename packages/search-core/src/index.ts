@@ -98,6 +98,20 @@ function normalize(text: string) {
 	return text.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+/** Inputs are normalized by the index/query pipeline. Latin identifiers must not match inside longer words. */
+export function matchesSearchText(text: string, term: string): boolean {
+	if (!term) return false;
+	if (!/^[\x20-\x7e]+$/.test(term)) return text.includes(term);
+	let position = text.indexOf(term);
+	while (position !== -1) {
+		const before = position > 0 ? (text[position - 1] ?? '') : '';
+		const after = text[position + term.length] ?? '';
+		if (!/[a-z0-9_]/i.test(before) && !/[a-z0-9_]/i.test(after)) return true;
+		position = text.indexOf(term, position + 1);
+	}
+	return false;
+}
+
 export function getSearchTerms(query: string): string[] {
 	const normalized = normalize(query).slice(0, 1000);
 	const words = Array.from(segmenter.segment(normalized))
@@ -217,7 +231,7 @@ export function searchDocuments<T extends SearchDocument>(
 		for (const term of terms) {
 			let matched = false;
 			for (const field of item.fields) {
-				if (field.weight > 0 && field.text.includes(term)) {
+				if (field.weight > 0 && matchesSearchText(field.text, term)) {
 					score += field.weight;
 					matched = true;
 				}
@@ -225,7 +239,8 @@ export function searchDocuments<T extends SearchDocument>(
 			if (matched) matchedTerms.push(term);
 		}
 		if (matchedTerms.length < requiredMatches) continue;
-		if (item.normalizedTitle.includes(phrase)) score += titlePhraseBoost;
+		if (matchesSearchText(item.normalizedTitle, phrase))
+			score += titlePhraseBoost;
 		if (score > 0)
 			hits.push({
 				document: item.document,
