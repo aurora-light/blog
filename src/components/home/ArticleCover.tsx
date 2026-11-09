@@ -2,6 +2,7 @@
 
 import type { ArticleCategory } from '@/lib/article-categories';
 import Image from 'next/image';
+import { getProxiedImage } from '@/lib/image-proxy';
 import { useState } from 'react';
 
 const styles: Record<
@@ -49,13 +50,16 @@ const styles: Record<
 export function ArticleCover({
 	category,
 	slug,
-	cover
+	cover,
+	variant = 'card'
 }: {
 	category: ArticleCategory;
 	slug: string;
 	cover?: string;
+	variant?: 'card' | 'thumbnail';
 }) {
 	const [failed, setFailed] = useState(false);
+	const thumbnail = variant === 'thumbnail';
 	const style = styles[category];
 	const seed =
 		Array.from(slug).reduce(
@@ -64,7 +68,12 @@ export function ArticleCover({
 		) % 3;
 	return (
 		<div
-			className="relative aspect-[16/10] overflow-hidden rounded-xl transition-transform duration-500 group-hover:-translate-y-1 motion-reduce:transform-none"
+			aria-hidden={thumbnail || undefined}
+			className={
+				thumbnail
+					? 'relative aspect-[16/10] w-16 shrink-0 overflow-hidden rounded-md sm:w-20'
+					: 'relative aspect-[16/10] overflow-hidden rounded-xl transition-transform duration-500 group-hover:-translate-y-1 motion-reduce:transform-none'
+			}
 			style={{ backgroundColor: style.background, color: style.color }}
 		>
 			<div
@@ -75,10 +84,12 @@ export function ArticleCover({
 					backgroundSize: '24px 24px'
 				}}
 			/>
-			<div className="absolute inset-x-5 top-4 flex items-center justify-between font-mono text-[9px] tracking-[0.16em] opacity-70">
-				<span>{style.label}</span>
-				<span>0{seed + 1} / NOTES</span>
-			</div>
+			{!thumbnail && (
+				<div className="absolute inset-x-5 top-4 flex items-center justify-between font-mono text-[9px] tracking-[0.16em] opacity-70">
+					<span>{style.label}</span>
+					<span>0{seed + 1} / NOTES</span>
+				</div>
+			)}
 			<svg
 				viewBox="0 0 320 200"
 				className="absolute inset-0 size-full"
@@ -319,15 +330,21 @@ export function ArticleCover({
 					</>
 				)}
 			</svg>
-			<span className="absolute bottom-4 left-5 font-mono text-[9px] tracking-wide opacity-60">
-				{style.caption}
-			</span>
+			{!thumbnail && (
+				<span className="absolute bottom-4 left-5 font-mono text-[9px] tracking-wide opacity-60">
+					{style.caption}
+				</span>
+			)}
 			{cover && !failed && (
 				<Image
-					src={cover}
+					src={getProxiedImage(cover, { width: thumbnail ? 160 : 800 })}
 					alt=""
 					fill
-					sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw"
+					sizes={
+						thumbnail
+							? '(max-width: 639px) 64px, 80px'
+							: '(max-width: 639px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw'
+					}
 					unoptimized
 					onError={() => setFailed(true)}
 					className="object-cover transition-transform duration-500 group-hover:scale-[1.025] motion-reduce:transform-none"

@@ -114,6 +114,25 @@
 	color: inherit;
 	font-size: inherit;
 }
+.article-body .article-code-block {
+	min-width: 0;
+	margin: 1.25rem 0;
+	overflow: hidden;
+	border: 1px solid #e4e4e7;
+	border-radius: 10px;
+	background: #f4f4f5;
+}
+.article-body .article-code-block pre {
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+	padding: 1.1rem 1.25rem;
+	background: transparent;
+}
+.dark .article-body .article-code-block {
+	border-color: #ffffff14;
+	background: #151518;
+}
 .article-body :is(code, kbd, pre) {
 	font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
 }
