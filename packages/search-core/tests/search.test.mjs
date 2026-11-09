@@ -5,7 +5,8 @@ import {
 	createSearchIndex,
 	searchDocuments,
 	getSearchTerms,
-	defaultSearchFields
+	defaultSearchFields,
+	matchesSearchText
 } from '../dist/index.js';
 const document = (id, overrides = {}) => ({
 	id,
@@ -137,5 +138,33 @@ test('Invalid weights and query budgets are rejected instead of silently misbeha
 		{ excerptLength: 100, excerptContext: 100 }
 	]) {
 		assert.throws(() => engine.search('React', options), RangeError);
+	}
+});
+
+test('Java does not match JavaScript while mixed Chinese/English and punctuated identifiers still match', () => {
+	const engine = createSearchEngine([
+		document('java', { title: 'Java 项目学习', tags: ['Java'] }),
+		document('chinese', { content: '调试Java内存泄漏' }),
+		document('react', {
+			title: 'React 新手',
+			content: 'JavaScript 对象和 javaScript 数组'
+		}),
+		document('title', { title: 'JavaScript 入门' }),
+		document('identifiers', {
+			content: 'Next.js C++ @scope/package Redis 缓存设计'
+		})
+	]);
+	assert.deepEqual(
+		engine.search('java').map((hit) => hit.document.id),
+		['java', 'chinese']
+	);
+	assert.ok(
+		engine.search('javascript').some((hit) => hit.document.id === 'react')
+	);
+	assert.equal(matchesSearchText('缓存设计', '缓存'), true);
+	for (const query of ['next.js', 'c++', '@scope/package']) {
+		assert.ok(
+			engine.search(query).some((hit) => hit.document.id === 'identifiers')
+		);
 	}
 });
