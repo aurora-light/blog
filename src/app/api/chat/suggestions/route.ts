@@ -1,3 +1,4 @@
+import { checkBotProtection } from '@/lib/bot-protection';
 import { getChatModelId, getChatProvider } from '@/lib/chat-provider';
 import { suggestionsSchema } from '@/lib/chat-types';
 import { ChatbotError } from '@/lib/errors';
@@ -20,6 +21,8 @@ const empty = () =>
 	);
 
 export async function POST(request: Request) {
+	const rejection = await checkBotProtection();
+	if (rejection) return rejection;
 	let body: unknown;
 	try {
 		body = await request.json();
