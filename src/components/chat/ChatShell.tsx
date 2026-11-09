@@ -1,201 +1,70 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
-import {
-	type DataUIPart,
-	DefaultChatTransport,
-	type FileUIPart,
-	type UIMessage
-} from 'ai';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { articleRetrievalSchema, waitingStatusSchema } from '@/lib/chat-types';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useActiveChat } from '@/hooks/use-active-chat';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChatHeader } from './ChatHeader';
-import { ChatLauncher } from './ChatLauncher';
 import { ChatMessages } from './ChatMessages';
 import { MultimodalInput } from './MultimodalInput';
-import {
-	type CustomChatMessage,
-	type CustomUIDataTypes,
-	useDataStream
-} from './data-stream-provider';
-import { getMessageText } from './message-utils';
-import {
-	createSuggestionsClient,
-	type SuggestionsState
-} from './suggestions-request';
 
-const chatTransport = new DefaultChatTransport({
-	api: '/api/chat'
-});
-
-export function ChatShell() {
+export function ChatShell({ children }: { children: ReactNode }) {
 	const [isOpen, setIsOpen] = useState(false);
-	const [input, setInput] = useState('');
 	const inputRef = useRef<HTMLTextAreaElement>(null);
-	const [suggestionsClient] = useState(() => createSuggestionsClient());
-	const [suggestions, setSuggestions] = useState<
-		(SuggestionsState & { messageId: string }) | undefined
-	>();
-	const cancelSuggestions = useCallback(() => {
-		suggestionsClient.cancel();
-		setSuggestions(undefined);
-	}, [suggestionsClient]);
-	useEffect(() => () => suggestionsClient.cancel(), [suggestionsClient]);
-	const { setDataStream, setWaitingStatus } = useDataStream();
-	const handleData = useCallback(
-		(part: DataUIPart<CustomUIDataTypes>) => {
-			// Persistent retrieval events already live in their own message.parts.
-			if (part.type === 'data-article-retrieval') return;
-			setDataStream((current) => [...current, part]);
-
-			if (part.type === 'data-waiting-status') {
-				setWaitingStatus(part.data);
-			}
-		},
-		[setDataStream, setWaitingStatus]
-	);
 	const {
 		messages,
-		sendMessage,
+		input,
+		setInput,
+		suggestions,
 		status,
-		stop,
-		regenerate,
-		setMessages,
 		error,
-		clearError
-	} = useChat<CustomChatMessage>({
-		transport: chatTransport,
-		throttle: 50,
-		onData: handleData,
-		onFinish: ({
-			message,
-			messages: finishedMessages,
-			isAbort,
-			isDisconnect,
-			isError
-		}) => {
-			if (isAbort || isDisconnect || isError) return;
-			const reply = getMessageText(message).trim().slice(0, 8000);
-			const userMessage = [...finishedMessages]
-				.reverse()
-				.find((item) => item.role === 'user');
-			const question = userMessage
-				? getMessageText(userMessage).trim().slice(0, 2000)
-				: '';
-			const part = message.parts.find(
-				(part) => part.type === 'data-article-retrieval'
-			);
-			const retrieval =
-				part && 'data' in part
-					? articleRetrievalSchema.safeParse(part.data)
-					: undefined;
-			if (
-				!reply ||
-				!question ||
-				!retrieval?.success ||
-				!retrieval.data.sources.length
-			)
-				return;
-			void suggestionsClient.load(
-				{
-					reply,
-					question,
-					sourceSlugs: retrieval.data.sources.map((source) => source.slug)
-				},
-				(data) => setSuggestions({ ...data, messageId: message.id })
-			);
-		},
-		dataPartSchemas: {
-			'article-retrieval': articleRetrievalSchema,
-			'waiting-status': waitingStatusSchema
-		}
-	});
-
-	const isGenerating = status === 'submitted' || status === 'streaming';
-
+		isGenerating,
+		submitMessage,
+		reuseMessage,
+		clearChat,
+		stop,
+		regenerate
+	} = useActiveChat();
 	useEffect(() => {
-		if (isOpen) {
-			window.requestAnimationFrame(() => inputRef.current?.focus());
-		}
+		if (!isOpen) return;
+		const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
+		return () => window.cancelAnimationFrame(frame);
 	}, [isOpen]);
 
-	const submitMessage = useCallback(
-		async (text: string, files: FileUIPart[] = []) => {
-			const nextMessage = text.trim();
-			if ((!nextMessage && files.length === 0) || isGenerating) return;
-
-			cancelSuggestions();
-			clearError();
-			setInput('');
-			await sendMessage({
-				files,
-				text: nextMessage || '请分析这些图片。'
-			});
-		},
-		[clearError, isGenerating, sendMessage, cancelSuggestions]
-	);
-
-	const reuseMessage = useCallback((message: UIMessage) => {
-		const text = getMessageText(message);
-
-		if (!text) {
-			toast.error('没有可编辑的内容');
-			return;
-		}
-
-		setInput(text);
-		window.requestAnimationFrame(() => inputRef.current?.focus());
-	}, []);
-
 	return (
-		<>
-			<div className="fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6">
-				{!isOpen ? <ChatLauncher onOpen={() => setIsOpen(true)} /> : null}
-			</div>
-
-			<Dialog open={isOpen} onOpenChange={setIsOpen}>
-				<DialogContent
-					showCloseButton={false}
-					overlayClassName="bg-zinc-950/55 backdrop-blur-md dark:bg-black/70"
-					className="flex h-[min(860px,90dvh)] w-[min(1120px,94vw)] max-w-none flex-col gap-0 overflow-hidden rounded-[28px] border border-white/60 bg-white/95 p-0 shadow-[0_32px_120px_-28px_rgba(0,0,0,0.65)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/95 sm:rounded-[32px]"
-				>
-					<DialogTitle className="sr-only">阿轩的 AI 助手</DialogTitle>
-					<ChatHeader
-						hasMessages={messages.length > 0}
-						onClear={() => {
-							cancelSuggestions();
-							void stop();
-							setMessages([]);
-						}}
-						onClose={() => setIsOpen(false)}
-					/>
-					<ChatMessages
-						messages={messages}
-						suggestions={suggestions}
-						status={status}
-						error={error}
-						onRegenerate={() => {
-							cancelSuggestions();
-							void regenerate();
-						}}
-						onReuse={reuseMessage}
-						onSubmitSuggestion={(question) => void submitMessage(question)}
-					/>
-					<MultimodalInput
-						input={input}
-						inputRef={inputRef}
-						isGenerating={isGenerating}
-						onInputChange={setInput}
-						onSubmit={submitMessage}
-						onStop={() => {
-							cancelSuggestions();
-							void stop();
-						}}
-					/>
-				</DialogContent>
-			</Dialog>
-		</>
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+			{children}
+			<DialogContent
+				showCloseButton={false}
+				overlayClassName="bg-zinc-950/55 backdrop-blur-md dark:bg-black/70"
+				className="flex h-[min(860px,90dvh)] w-[min(1120px,94vw)] max-w-none flex-col gap-0 overflow-hidden rounded-[28px] border border-white/60 bg-white/95 p-0 shadow-[0_32px_120px_-28px_rgba(0,0,0,0.65)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/95 sm:rounded-[32px]"
+			>
+				<DialogTitle className="sr-only">阿轩的 AI 助手</DialogTitle>
+				<ChatHeader
+					hasMessages={messages.length > 0}
+					onClear={() => void clearChat()}
+					onClose={() => setIsOpen(false)}
+				/>
+				<ChatMessages
+					messages={messages}
+					suggestions={suggestions}
+					status={status}
+					error={error}
+					onRegenerate={() => void regenerate()}
+					onReuse={(message) => {
+						reuseMessage(message);
+						window.requestAnimationFrame(() => inputRef.current?.focus());
+					}}
+					onSubmitSuggestion={(question) => void submitMessage(question)}
+				/>
+				<MultimodalInput
+					input={input}
+					inputRef={inputRef}
+					isGenerating={isGenerating}
+					onInputChange={setInput}
+					onSubmit={submitMessage}
+					onStop={() => void stop()}
+				/>
+			</DialogContent>
+		</Dialog>
 	);
 }

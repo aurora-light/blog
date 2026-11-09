@@ -6,13 +6,13 @@ import { sanitizeText } from '@/lib/utils';
 import { articleRetrievalSchema } from '@/lib/chat-types';
 import type { FileUIPart, UIMessage } from 'ai';
 import { Copy, FileText, Pencil } from 'lucide-react';
-import Image from 'next/image';
 import { memo } from 'react';
 import { toast } from 'sonner';
 import { ImageAttachmentPreview } from './ImageAttachmentPreview';
 import { MessageReasoning } from './message-reasoning';
 import { getMessageText } from './message-utils';
 import { ArticleRetrievalTrace } from './ArticleRetrievalTrace';
+import { ChatAvatar } from './ChatAvatar';
 
 type ChatMessageProps = {
 	message: UIMessage;
@@ -41,19 +41,6 @@ function WaitingText() {
 		<Shimmer as="span" className="text-xs" duration={1.8} spread={1.5}>
 			正在思考…
 		</Shimmer>
-	);
-}
-
-function AssistantAvatar() {
-	return (
-		<Image
-			src="/logo.webp"
-			alt=""
-			width={28}
-			height={28}
-			unoptimized
-			className="size-7 shrink-0 rounded-lg object-cover"
-		/>
 	);
 }
 
@@ -237,7 +224,7 @@ function PureChatMessage({
 		<div className="group/message flex flex-col items-end">{content}</div>
 	) : (
 		<div className="group/message flex items-start gap-2">
-			<AssistantAvatar />
+			<ChatAvatar className="size-7 rounded-lg" />
 			<div className="flex min-w-0 flex-1 flex-col items-start">{content}</div>
 		</div>
 	);
@@ -252,7 +239,7 @@ export const ThinkingMessage = () => (
 		data-testid="message-assistant-loading"
 	>
 		<div className="flex items-center gap-2">
-			<AssistantAvatar />
+			<ChatAvatar className="size-7 rounded-lg" />
 			<WaitingText />
 		</div>
 	</div>

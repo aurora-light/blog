@@ -1,8 +1,12 @@
-import siteMetadata from '@/config/site';
+import { ChatShell } from '@/components/chat/ChatShell';
+import { ChatTrigger } from '@/components/chat/ChatTrigger';
+import { ChatLauncher } from '@/components/chat/ChatLauncher';
 import { GitHubIcon } from '@/assets/icons/GitHubIcon';
-import { Rss, Search } from 'lucide-react';
+import siteMetadata from '@/config/site';
+import { Rss } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArticleSearch } from './ArticleSearch';
 import { NavigationBar } from './NavigationBar';
 import ThemeToggle from './ThemeToggle';
 
@@ -62,13 +66,16 @@ export function Header() {
 						</a>
 					</div>
 					<ThemeToggle />
-					<Link
-						href="/#article-search"
-						aria-label="搜索文章"
-						className="grid size-8 place-items-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-violet-400 dark:hover:bg-white/10 dark:hover:text-white"
-					>
-						<Search className="size-4" />
-					</Link>
+					<ChatShell>
+						<ChatTrigger asChild>
+							<ChatLauncher
+								className="mx-1 size-8 rounded-full shadow-none"
+								title="和阿轩的 AI 分身聊聊"
+								aria-label="打开阿轩的 AI 分身"
+							/>
+						</ChatTrigger>
+					</ChatShell>
+					<ArticleSearch />
 				</div>
 			</div>
 		</header>

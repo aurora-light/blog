@@ -1,5 +1,5 @@
 import { Trash2, X } from 'lucide-react';
-import Image from 'next/image';
+import { ChatAvatar } from './ChatAvatar';
 
 type ChatHeaderProps = {
 	hasMessages: boolean;
@@ -13,17 +13,7 @@ export function ChatHeader({ hasMessages, onClear, onClose }: ChatHeaderProps) {
 			<div className="absolute -right-10 -top-14 h-32 w-32 rounded-full bg-amber-300/30 blur-3xl dark:bg-amber-500/15" />
 			<div className="relative flex items-center justify-between gap-3">
 				<div className="flex min-w-0 items-center gap-3">
-					<div className="relative size-10 shrink-0">
-						<Image
-							src="/logo.webp"
-							alt=""
-							width={40}
-							height={40}
-							unoptimized
-							className="size-full rounded-2xl object-cover shadow-xs"
-						/>
-						<span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-zinc-950" />
-					</div>
+					<ChatAvatar className="size-10 rounded-2xl shadow-xs" />
 					<div className="min-w-0">
 						<h2 className="truncate text-sm font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
 							阿轩的 AI 助手
