@@ -54,7 +54,7 @@ interface ListProps {
 
 ### 实现思路
 
-1.有一个dynamicRowHeight对象,用于存储已经计算好的元素高度2.有一个cachedBounds对象，用于存储每个元素的offset信息，包括{scrollTop,height},并返回对应的获取每个元素的索引.参数类型开头有
+1.有一个dynamicRowHeight对象,用于存储已经计算好的元素高度2.有一个cachedBounds对象，用于存储每个元素的offset信息，包括`{scrollTop,height}`,并返回对应的获取每个元素的索引.参数类型开头有
 
 ```ts
   const map = new Map<number,number>()
@@ -82,7 +82,7 @@ return () => {
 
 ```
 
-2.然后有一个cachedBounds对象，用于存储每个元素的offset信息，包括{scrollTop,height},并返回对应的获取每个元素的索引.参数类型开头有cachedBounds
+2.然后有一个cachedBounds对象，用于存储每个元素的offset信息，包括`{scrollTop,height}`,并返回对应的获取每个元素的索引.参数类型开头有cachedBounds
 
 ```tsx
   type CacheBounds ={

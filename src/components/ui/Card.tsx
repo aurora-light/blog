@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import Link, { type LinkProps } from 'next/link';
+import type { JSX } from 'react';
 
 import { type IconProps } from '@/assets';
 
