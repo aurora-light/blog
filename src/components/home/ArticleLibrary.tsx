@@ -101,7 +101,7 @@ export function ArticleLibrary({ articles }: { articles: HomeArticle[] }) {
 				{filtered.length ? (
 					<>
 						<div className="grid grid-cols-1 gap-x-6 gap-y-10 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-							{filtered.slice(0, visibleCount).map((article) => (
+							{filtered.slice(0, visibleCount).map((article, index) => (
 								<article key={article.slug} data-category={article.category}>
 									<Link
 										href={`/posts/${encodeURIComponent(article.slug)}`}
@@ -111,6 +111,7 @@ export function ArticleLibrary({ articles }: { articles: HomeArticle[] }) {
 											category={article.category}
 											slug={article.slug}
 											cover={article.cover}
+											loading={index === 0 ? 'eager' : 'lazy'}
 										/>
 										<div className="pt-4">
 											<div className="mb-2 flex items-center justify-between gap-2 text-[10px] text-zinc-400">

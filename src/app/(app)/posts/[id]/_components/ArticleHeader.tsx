@@ -1,5 +1,6 @@
 import { getProxiedImage } from '@/lib/image-proxy';
 import siteMetadata from '@/config/site';
+import { ArticleShare } from '@/components/ArticleShare';
 import {
 	articleCategories,
 	getArticleCategoryHref,
@@ -63,6 +64,14 @@ export function ArticleHeader({
 					<Clock className="size-3" aria-hidden="true" />约{' '}
 					{Math.max(1, Math.ceil(post.readingTime?.minutes ?? 1))} 分钟阅读
 				</span>
+				<ArticleShare
+					slug={post.slug}
+					title={post.title}
+					articleUrl={
+						new URL(`/posts/${encodeURIComponent(post.slug)}`, siteMetadata.url)
+							.href
+					}
+				/>
 			</div>
 			<div className="mt-4 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-zinc-400">
 				{tags.map((tag) => (

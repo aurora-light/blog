@@ -51,11 +51,13 @@ export function ArticleCover({
 	category,
 	slug,
 	cover,
+	loading = 'lazy',
 	variant = 'card'
 }: {
 	category: ArticleCategory;
 	slug: string;
 	cover?: string;
+	loading?: 'eager' | 'lazy';
 	variant?: 'card' | 'thumbnail';
 }) {
 	const [failed, setFailed] = useState(false);
@@ -346,6 +348,7 @@ export function ArticleCover({
 							: '(max-width: 639px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw'
 					}
 					unoptimized
+					loading={loading}
 					onError={() => setFailed(true)}
 					className="object-cover transition-transform duration-500 group-hover:scale-[1.025] motion-reduce:transform-none"
 				/>
