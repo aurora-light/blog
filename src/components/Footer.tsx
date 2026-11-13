@@ -3,7 +3,6 @@ import siteMetadata from '@/config/site';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Container } from './Container';
-import { ResumeDialog } from './ResumeDialog';
 
 const navigationItems = siteMetadata.navigationItems;
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
@@ -48,15 +47,6 @@ export function Footer() {
 							</p>
 							<Links />
 						</div>
-					</Container.Inner>
-					<Container.Inner
-						className={{
-							outer: 'mt-6',
-							inner:
-								'flex flex-col items-center justify-start gap-2 sm:flex-row'
-						}}
-					>
-						<ResumeDialog />
 					</Container.Inner>
 					{/* <Link
 						target="_blank"
